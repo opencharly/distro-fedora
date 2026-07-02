@@ -1,0 +1,7 @@
+tier23:
+    candy:
+        base: fedora
+    tier23-candy:
+        candy:
+            - '@github.com/opencharly/charly/candy/supervisord:v2026.183.1359'
+            - '@github.com/opencharly/charly/candy/check-tier23-layer:v2026.183.1359'

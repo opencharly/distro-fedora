@@ -1,0 +1,15 @@
+immich:
+    candy:
+        base: fedora-nonfree
+        platform:
+            - linux/amd64
+    immich-candy:
+        candy:
+            - '@github.com/opencharly/charly/candy/agent-forwarding:v2026.183.1359'
+            - '@github.com/opencharly/charly/candy/nodejs:v2026.183.1359'
+            - '@github.com/opencharly/charly/candy/supervisord:v2026.183.1359'
+            - '@github.com/opencharly/charly/candy/postgresql:v2026.183.1359'
+            - '@github.com/opencharly/charly/candy/vectorchord:v2026.183.1359'
+            - '@github.com/opencharly/charly/candy/redis:v2026.183.1359'
+            - '@github.com/opencharly/charly/candy/immich:v2026.183.1359'
+            - '@github.com/opencharly/charly/candy/dbus:v2026.183.1359'

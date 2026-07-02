@@ -1,0 +1,6 @@
+selftest-layer:
+    candy:
+        base: fedora
+    selftest-layer-candy:
+        candy:
+            - '@github.com/opencharly/charly/candy/sshd:v2026.183.1359'

@@ -1,0 +1,12 @@
+filebrowser:
+    candy:
+        base: fedora
+    filebrowser-candy:
+        candy:
+            - '@github.com/opencharly/charly/candy/agent-forwarding:v2026.183.1359'
+            - '@github.com/opencharly/charly/candy/filebrowser:v2026.183.1359'
+            - '@github.com/opencharly/charly/candy/dbus:v2026.183.1359'
+        # No box-level check: the filebrowser + dbus-daemon binaries belong to their
+        # candies (filebrowser, dbus), and the `data`-volume probe belongs to
+        # candy/filebrowser (which declares the volume) — one candy check covers
+        # every box composing them.

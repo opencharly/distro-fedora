@@ -1,0 +1,9 @@
+hermes-playwright:
+    candy:
+        base: fedora
+    hermes-playwright-candy:
+        candy:
+            - '@github.com/opencharly/charly/candy/agent-forwarding:v2026.183.1359'
+            - '@github.com/opencharly/charly/candy/hermes:v2026.183.1359'
+            - '@github.com/opencharly/charly/candy/hermes-playwright:v2026.183.1359'
+            - '@github.com/opencharly/charly/candy/dbus:v2026.183.1359'

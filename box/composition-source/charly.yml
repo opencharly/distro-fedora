@@ -1,0 +1,20 @@
+composition-source:
+    candy:
+        base: fedora
+    composition-source-candy:
+        candy:
+            - '@github.com/opencharly/charly/candy/charly:v2026.183.1359'
+    composition-source-charly:
+        check: command=test -x /usr/bin/charly
+        id: composition-source-charly
+        exit_status: 0
+        plugin: command
+        plugin_input:
+            command: test -x /usr/bin/charly
+    composition-source-marker:
+        check: command=test -d /etc
+        id: composition-source-marker
+        exit_status: 0
+        plugin: command
+        plugin_input:
+            command: test -d /etc

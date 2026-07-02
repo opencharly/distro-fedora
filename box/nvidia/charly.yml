@@ -1,0 +1,14 @@
+nvidia:
+    candy:
+        # GPU base: Fedora + RPM Fusion (fedora-nonfree) + the GPU runtime
+        # (nvidia layer: driver libs + nvidia-container-toolkit/CDI) + the CUDA
+        # toolkit (cuda layer: nvcc/cuDNN/onnxruntime). No builder map: none of
+        # these layers carry a pixi/npm/cargo manifest.
+        base: fedora-nonfree
+        platform:
+            - linux/amd64
+    nvidia-candy:
+        candy:
+            - '@github.com/opencharly/charly/candy/agent-forwarding:v2026.183.1359'
+            - '@github.com/opencharly/charly/candy/nvidia:v2026.183.1359'
+            - '@github.com/opencharly/charly/candy/cuda:v2026.183.1359'
