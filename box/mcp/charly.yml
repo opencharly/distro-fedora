@@ -1,7 +1,6 @@
 mcp:
     candy:
         base: fedora
-    mcp-candy:
         candy:
             - '@github.com/opencharly/charly/candy/agent-forwarding:v2026.183.1359'
             - '@github.com/opencharly/charly/candy/jupyter:v2026.183.1359'

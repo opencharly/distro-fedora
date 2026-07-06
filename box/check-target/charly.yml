@@ -1,8 +1,0 @@
-check-target:
-    candy:
-        base: fedora
-    check-target-candy:
-        candy:
-            - '@github.com/opencharly/charly/candy/claude-code:v2026.183.1359'
-            - '@github.com/opencharly/charly/candy/charly-mcp:v2026.183.1359'
-            - '@github.com/opencharly/charly/candy/check-target-layer:v2026.183.1359'

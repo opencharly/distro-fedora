@@ -17,7 +17,7 @@
 #  this charly.yml). From the parent repo: `charly -C box/fedora box build
 #  fedora-coder`, or anywhere: `charly --repo opencharly/distro-fedora box build
 #  fedora-coder`.
-version: 2026.174.1100
+version: 2026.186.2323
 # Canonical repo identity — lets the import-namespace loader recognize this repo
 # when main imports it under the `fedora` namespace to build the relocated boxes.
 # The dependency is one-directional: main imports fedora; fedora imports nothing
@@ -73,26 +73,25 @@ check-sway-browser-vnc-pod:
         disposable: true
         lifecycle: dev
         description: Sole bed proving the full browser-desktop probe surface — the only deterministic source of cdp + vnc + record + dbus probes together (the richest probe-verb bed) against the Sway+Chrome+wayvnc desktop. Builds the sway-browser-vnc image on fedora, deploys it (5900/9222/9224), and runs sway-desktop-vnc's baked cdp/vnc/wl/dbus probes plus the bed's own cdp list, wl sway-tree, and record start steps.
-    esbv-pod-cdp-list:
-        check: cdp=list
-        cdp: list
-        id: esbv-pod-cdp-list
-        context:
-            - runtime
-    esbv-pod-wl-sway-tree:
-        check: wl=sway-tree
-        wl: sway-tree
-        id: esbv-pod-wl-sway-tree
-        context:
-            - runtime
-    esbv-pod-record-start:
-        check: record=start
-        record: start
-        id: esbv-pod-record-start
-        record_name: check-term
-        record_mode: terminal
-        context:
-            - runtime
+        plan:
+            - check: cdp=list
+              cdp: list
+              id: esbv-pod-cdp-list
+              context:
+                - runtime
+            - check: wl=sway-tree
+              wl: sway-tree
+              id: esbv-pod-wl-sway-tree
+              context:
+                - runtime
+            - check: record=start
+              record:
+                method: start
+                record_name: check-term
+                record_mode: terminal
+              id: esbv-pod-record-start
+              context:
+                - runtime
 # Relocated from main (2026-06 box inversion) with their boxes — bare local
 # box refs (check-pod / jupyter / jupyter-ml now live under box/ in this
 # submodule). Per-box R10 beds; the cross-deployment mechanism beds
@@ -105,18 +104,17 @@ check-pod:
         disposable: true
         lifecycle: dev
         description: Sole combined fast (~110s) mechanism bed proving four pipeline paths at once — kind:box build, kind:candy composition order, kind:pod runtime, and DeployTarget rendering — the canonical fast R10 gate for box/candy/pod/DeployTarget code changes. Builds a two-layer fedora-minimal:43 image (check-base-layer + check-stack-layer asserting the base marker survived), deploys it, and runs file marker checks, the :18794 port/ss listener check, the check-sleep supervisord service check, plus a host-side charly status --json (status-shows-pod).
-    status-shows-pod:
-        check: command=charly status --json
-        id: status-shows-pod
-        stdout:
-            - contains: '"kind": "pod"'
-            - contains: check-pod
-        context:
-            - runtime
-        plugin: command
-        plugin_input:
-            command: charly status --json
-            in_container: false
+        plan:
+            - check: command=charly status --json
+              id: status-shows-pod
+              stdout:
+                - contains: '"kind": "pod"'
+                - contains: check-pod
+              context:
+                - runtime
+              command:
+                command: charly status --json
+                in_container: false
 # add_candy-on-pod overlay-deploy witness. Deploy-KEY (check-addcandy-pod) differs
 # from image-NAME (check-pod) — the precise condition under which the pod overlay
 # (`<deploy-key>-overlay` + the `<deploy-key>:<calver>` alias, carrying the
@@ -143,31 +141,27 @@ check-addcandy-pod:
         lifecycle: dev
         description: >-
             Sole proof of the add_candy-on-pod overlay-deploy path when deploy-key != image-name. A disposable pod bed whose deploy-key (check-addcandy-pod) differs from its image-name (check-pod) and which add_candy-overlays the pod-addcandy-marker layer (a /etc/pod-addcandy-marker file-write carrying POD-ADDCANDY-MARKER-OK AND a copy: of copied.dat to /etc/pod-addcandy-copied carrying POD-ADDCANDY-COPIED-OK). It asserts both files are present inside the RUNNING container — the write: leg proves the `<deploy-key>-overlay` image (which carries the add_candy layer) is the image `charly config`/`charly start` actually deployed (fails if the BASE check-pod image, without the markers, was deployed instead), and the copy: leg additionally proves the REMOTE add_candy candy's source tree was staged into the overlay build (`.build/_candy/<name>.<version>/`) so the per-candy scratch-stage COPY resolved. Reuses the already-built check-pod image so the bed stays light.
-    check-addcandy-pod-add_candy:
         add_candy:
             - '@github.com/opencharly/charly/candy/pod-addcandy-marker:v2026.183.1359'
-    addcandy-marker-deployed:
-        check: the pod-addcandy marker file is present inside the running container — proves the add_candy overlay actually deployed, not the base image
-        id: addcandy-marker-deployed
-        context:
-            - runtime
-        plugin: file
-        plugin_input:
-            file: /etc/pod-addcandy-marker
-            exists: true
-            contains:
-                - contains: "POD-ADDCANDY-MARKER-OK"
-    addcandy-copied-deployed:
-        check: the pod-addcandy COPIED data file is present inside the running container — proves the REMOTE add_candy candy's copy-verb source was staged into the overlay build (.build/_candy/name.version) so the per-candy scratch-stage COPY resolved, and the overlay deployed
-        id: addcandy-copied-deployed
-        context:
-            - runtime
-        plugin: file
-        plugin_input:
-            file: /etc/pod-addcandy-copied
-            exists: true
-            contains:
-                - contains: "POD-ADDCANDY-COPIED-OK"
+        plan:
+            - check: the pod-addcandy marker file is present inside the running container — proves the add_candy overlay actually deployed, not the base image
+              id: addcandy-marker-deployed
+              context:
+                - runtime
+              file:
+                file: /etc/pod-addcandy-marker
+                exists: true
+                contains:
+                    - contains: "POD-ADDCANDY-MARKER-OK"
+            - check: the pod-addcandy COPIED data file is present inside the running container — proves the REMOTE add_candy candy's copy-verb source was staged into the overlay build (.build/_candy/name.version) so the per-candy scratch-stage COPY resolved, and the overlay deployed
+              id: addcandy-copied-deployed
+              context:
+                - runtime
+              file:
+                file: /etc/pod-addcandy-copied
+                exists: true
+                contains:
+                    - contains: "POD-ADDCANDY-COPIED-OK"
 # check-stepkind-emit-pod — R10 witness for the F-STEP-EMIT BUILD leg: the pod-overlay
 # OCITarget open external-step arm that BAKES a class:step plugin's build-context Containerfile
 # fragment. A disposable pod bed reusing the check-pod image that add_candy-overlays TWO
@@ -191,21 +185,19 @@ check-stepkind-emit-pod:
         lifecycle: dev
         description: >-
             Sole proof of the F-STEP-EMIT BUILD leg — the pod-overlay OCITarget open external-step arm that bakes a class:step plugin's build-context Containerfile fragment. A disposable pod bed reusing the check-pod image that add_candy-overlays plugin-example-stepkind (the out-of-tree class:step plugin declaring StepContract emits=true + serving OpEmit) and stepkind-build-consumer (a candy with a BUILD-context run: plugin: examplestepkind step). At the overlay build charly lowers the run-step to an external step (external:examplestepkind), OCITarget.emitExternalStep consults the plugin's declared Emits=true, Invokes its OpEmit, and splices the returned Containerfile RUN — baking /etc/examplestepkind-build-baked (carrying STEPKIND-BUILD-BAKED-OK) into the overlay image. Asserts the file is present inside the RUNNING container, so it passes iff the OpEmit fragment baked through the external-step arm and the overlay (not the base check-pod image) deployed.
-    check-stepkind-emit-pod-add_candy:
         add_candy:
             - '@github.com/opencharly/charly/candy/plugin-example-stepkind:v2026.183.1359'
             - '@github.com/opencharly/charly/candy/stepkind-build-consumer:v2026.183.1359'
-    stepkind-emit-baked-deployed:
-        check: the external-step OpEmit fragment baked — /etc/examplestepkind-build-baked is present inside the running container carrying STEPKIND-BUILD-BAKED-OK, proving the OCITarget external-step build-emit arm spliced the plugin's OpEmit fragment into the overlay image
-        id: stepkind-emit-baked-deployed
-        context:
-            - runtime
-        plugin: file
-        plugin_input:
-            file: /etc/examplestepkind-build-baked
-            exists: true
-            contains:
-                - contains: "STEPKIND-BUILD-BAKED-OK"
+        plan:
+            - check: the external-step OpEmit fragment baked — /etc/examplestepkind-build-baked is present inside the running container carrying STEPKIND-BUILD-BAKED-OK, proving the OCITarget external-step build-emit arm spliced the plugin's OpEmit fragment into the overlay image
+              id: stepkind-emit-baked-deployed
+              context:
+                - runtime
+              file:
+                file: /etc/examplestepkind-build-baked
+                exists: true
+                contains:
+                    - contains: "STEPKIND-BUILD-BAKED-OK"
 # check-enc-pod — encrypted-volume (gocryptfs) mount path end-to-end through the
 # EXTERNALIZED candy/plugin-enc (C16a). Reuses the check-pod image and adds a
 # deploy-only `type: encrypted` volume; the bed's `charly config` step runs charly's
@@ -225,32 +217,27 @@ check-enc-pod:
         lifecycle: dev
         description: >-
             Sole proof of the encrypted-volume (gocryptfs) mount path end-to-end through the externalized candy/plugin-enc (C16a). Reuses the check-pod image and adds a deploy-only type: encrypted volume (enc-data -> /home/user/.enc-data); the bed's `charly config` step runs charly's in-core enc shim (encPlanFor host-prelift -> verb:enc OpExecute), which drives `gocryptfs -init` then `systemd-run --scope --user gocryptfs -allow_other` on the host, after which the container binds the FUSE plain dir. Asserts host-side `charly config status check-enc-pod` reports the volume initialized AND mounted (encStatus, still core), and an in-container write to the mount point reads back (the FUSE-backed plain dir is bind-mounted + writable). Passphrase via the GOCRYPTFS_PASSWORD env hook (resolveEncPassphrase source 1) — export it for the run; the bed host needs gocryptfs + fusermount3 + a user systemd session.
-    check-enc-pod-volume:
         volume:
             - name: enc-data
               type: encrypted
               path: /home/user/.enc-data
-    enc-status-mounted:
-        check: host-side `charly config status` reports the encrypted volume initialized AND mounted — the plugin-enc mount succeeded
-        id: enc-status-mounted
-        context:
-            - runtime
-        plugin: command
-        plugin_input:
-            command: charly config status check-enc-pod
-            in_container: false
-        stdout:
-            - matches: "enc-data\\s+yes\\s+yes"
-    enc-plain-writable:
-        check: the FUSE-backed plain dir is bind-mounted into the container and writable — a written marker reads back
-        id: enc-plain-writable
-        context:
-            - runtime
-        plugin: command
-        plugin_input:
-            command: "echo ENC-BED-OK > /home/user/.enc-data/charly-bed-marker && cat /home/user/.enc-data/charly-bed-marker"
-        stdout:
-            - contains: "ENC-BED-OK"
+        plan:
+            - check: host-side `charly config status` reports the encrypted volume initialized AND mounted — the plugin-enc mount succeeded
+              id: enc-status-mounted
+              context:
+                - runtime
+              command:
+                command: charly config status check-enc-pod
+                in_container: false
+              stdout:
+                - matches: "enc-data\\s+yes\\s+yes"
+            - check: the FUSE-backed plain dir is bind-mounted into the container and writable — a written marker reads back
+              id: enc-plain-writable
+              context:
+                - runtime
+              command: "echo ENC-BED-OK > /home/user/.enc-data/charly-bed-marker && cat /home/user/.enc-data/charly-bed-marker"
+              stdout:
+                - contains: "ENC-BED-OK"
 # check-tunnel-pod — the RESOURCE-FREE R10 for the externalized tunnel EXECUTION leg
 # (candy/plugin-tunnel, verb:tunnel; C16b). plugin-tunnel is COMPILED INTO charly
 # (compiled_plugins), so — exactly like check-enc-pod exercises the compiled-in
@@ -268,50 +255,47 @@ check-tunnel-pod:
         lifecycle: dev
         description: >-
             Sole resource-free R10 for the externalized tunnel execution leg (candy/plugin-tunnel, verb:tunnel; C16b). plugin-tunnel is compiled into charly, so this bed reuses the check-pod image (a minimal running pod) and drives verb:tunnel's creds-free `plan` dry-run on the host during check-live — given a wire TunnelConfig the plan method returns the exact tailscale/cloudflared argv it would run WITHOUT exec, proving registry dispatch + the TunnelConfig wire round-trip + the moved command-building logic with ZERO tailscale/cloudflare credentials. Asserts both a tailscale (serve + funnel) and a cloudflare (ingress + run) plan. The pod carries no live tunnel: (a real ExecStartPost=tailscale serve on a logged-out host would fail steady-state).
-    tunnel-plan-tailscale:
-        check: verb:tunnel plan builds the exact tailscale serve/funnel argv from a wire TunnelConfig — creds-free registry dispatch + config round-trip + moved argv logic
-        id: tunnel-plan-tailscale
-        context:
-            - runtime
-        plugin: tunnel
-        plugin_input:
-            method: plan
-            config:
-                provider: tailscale
-                box_name: check-tunnel-pod
-                ports:
-                    - port: 8888
-                      backend_port: 8888
-                      protocol: http
-                      public: false
-                    - port: 443
-                      backend_port: 443
-                      protocol: https+insecure
-                      public: true
-            expect:
-                - tailscale serve --bg --https=8888 http://127.0.0.1:8888
-                - tailscale funnel --bg --https=443 https+insecure://127.0.0.1:443
-    tunnel-plan-cloudflare:
-        check: verb:tunnel plan builds the cloudflare ingress rules + run command from a wire TunnelConfig — creds-free registry dispatch + config round-trip
-        id: tunnel-plan-cloudflare
-        context:
-            - runtime
-        plugin: tunnel
-        plugin_input:
-            method: plan
-            config:
-                provider: cloudflare
-                tunnel_name: charly-check-tunnel
-                hostname: tunnel.example.com
-                box_name: check-tunnel-pod
-                ports:
-                    - port: 8080
-                      backend_port: 8080
-                      protocol: https
-                      public: true
-            expect:
-                - "ingress tunnel.example.com -> https://localhost:8080"
-                - cloudflared tunnel run charly-check-tunnel
+        plan:
+            - check: verb:tunnel plan builds the exact tailscale serve/funnel argv from a wire TunnelConfig — creds-free registry dispatch + config round-trip + moved argv logic
+              id: tunnel-plan-tailscale
+              context:
+                - runtime
+              tunnel:
+                method: plan
+                config:
+                    provider: tailscale
+                    box_name: check-tunnel-pod
+                    ports:
+                        - port: 8888
+                          backend_port: 8888
+                          protocol: http
+                          public: false
+                        - port: 443
+                          backend_port: 443
+                          protocol: https+insecure
+                          public: true
+                expect:
+                    - tailscale serve --bg --https=8888 http://127.0.0.1:8888
+                    - tailscale funnel --bg --https=443 https+insecure://127.0.0.1:443
+            - check: verb:tunnel plan builds the cloudflare ingress rules + run command from a wire TunnelConfig — creds-free registry dispatch + config round-trip
+              id: tunnel-plan-cloudflare
+              context:
+                - runtime
+              tunnel:
+                method: plan
+                config:
+                    provider: cloudflare
+                    tunnel_name: charly-check-tunnel
+                    hostname: tunnel.example.com
+                    box_name: check-tunnel-pod
+                    ports:
+                        - port: 8080
+                          backend_port: 8080
+                          protocol: https
+                          public: true
+                expect:
+                    - "ingress tunnel.example.com -> https://localhost:8080"
+                    - cloudflared tunnel run charly-check-tunnel
 check-jupyter-pod:
     pod:
         image: jupyter
@@ -336,34 +320,30 @@ check-fedora-vm:
         disposable: true
         lifecycle: dev
         description: Sole proof of the rpm localpkg AUTO-RESOLVE deploy path — the opencharly .rpm built from pkg/fedora installs onto a Fedora Cloud guest and dnf auto-resolves its mandatory deps. Disposable Fedora Cloud 43 libvirt VM, overlays the add_candy charly layer whose localpkg builds and dnf-installs the opencharly rpm, then asserts rpm -q opencharly/podman/libvirt/tailscale/gocryptfs + charly version (LOCALPKG-RPM-AUTORESOLVE-OK).
-    check-fedora-vm-add_candy:
         add_candy:
             - '@github.com/opencharly/charly/candy/charly:v2026.183.1359'
-    check-fedora-vm-install_opts:
         install_opts:
             allow_repo_changes: true
             allow_root_tasks: true
             skip_incompatible: true # skip composed layers lacking a guest-format section; the localpkg .deb/.rpm Depends/Requires install the packages
-    localpkg-rpm-autoresolve:
-        check: |
-            command=rpm -q opencharly >/dev/null 2>&1 &&
-            rpm -q podman >/dev/null 2>&1 &&
-            rpm -q libvirt >/dev/null 2>&1 &&
-            rpm -q tailscale >/dev/null 2>&1 &&
-            rpm -q gocryptfs >/dev/null 2>&1 &&
-            command -v charly >/dev/null 2>&1 &&
-            charly version &&
-            echo LOCALPKG-RPM-AUTORESOLVE-OK
-        id: localpkg-rpm-autoresolve
-        description: charly installed as the opencharly rpm via localpkg, mandatory deps auto-resolved by dnf (incl. tailscale)
-        stdout:
-            - contains: LOCALPKG-RPM-AUTORESOLVE-OK
-        exit_status: 0
-        context:
-            - runtime
-        plugin: command
-        plugin_input:
-            command: |
+        plan:
+            - check: |
+                command=rpm -q opencharly >/dev/null 2>&1 &&
+                rpm -q podman >/dev/null 2>&1 &&
+                rpm -q libvirt >/dev/null 2>&1 &&
+                rpm -q tailscale >/dev/null 2>&1 &&
+                rpm -q gocryptfs >/dev/null 2>&1 &&
+                command -v charly >/dev/null 2>&1 &&
+                charly version &&
+                echo LOCALPKG-RPM-AUTORESOLVE-OK
+              id: localpkg-rpm-autoresolve
+              description: charly installed as the opencharly rpm via localpkg, mandatory deps auto-resolved by dnf (incl. tailscale)
+              stdout:
+                - contains: LOCALPKG-RPM-AUTORESOLVE-OK
+              exit_status: 0
+              context:
+                - runtime
+              command: |
                 rpm -q opencharly >/dev/null 2>&1 &&
                 rpm -q podman >/dev/null 2>&1 &&
                 rpm -q libvirt >/dev/null 2>&1 &&
@@ -372,18 +352,15 @@ check-fedora-vm:
                 command -v charly >/dev/null 2>&1 &&
                 charly version &&
                 echo LOCALPKG-RPM-AUTORESOLVE-OK
-    welded-command-project-less:
-        check: the welded command plugins are baked beside charly at /usr/lib/charly/plugins so a core welded command dispatches project-less on the opencharly rpm install
-        id: welded-command-project-less
-        description: the opencharly rpm bakes the command:<word> plugins (doctor/vm/clean/…) beside the binary at /usr/lib/charly/plugins, so `charly doctor` dispatches project-less on the installed package (FAILS on the pre-fix rpm that shipped only the binary)
-        stdout:
-            - contains: WELDED-CMD-PROJECT-LESS-OK
-        exit_status: 0
-        context:
-            - runtime
-        plugin: command
-        plugin_input:
-            command: |
+            - check: the welded command plugins are baked beside charly at /usr/lib/charly/plugins so a core welded command dispatches project-less on the opencharly rpm install
+              id: welded-command-project-less
+              description: the opencharly rpm bakes the command:<word> plugins (doctor/vm/clean/…) beside the binary at /usr/lib/charly/plugins, so `charly doctor` dispatches project-less on the installed package (FAILS on the pre-fix rpm that shipped only the binary)
+              stdout:
+                - contains: WELDED-CMD-PROJECT-LESS-OK
+              exit_status: 0
+              context:
+                - runtime
+              command: |
                 test -x /usr/lib/charly/plugins/plugin-doctor &&
                 test -f /usr/lib/charly/plugins/plugin-doctor.providers &&
                 test -x /usr/lib/charly/plugins/plugin-vm &&
@@ -391,13 +368,12 @@ check-fedora-vm:
                 cd /tmp &&
                 charly doctor 2>/dev/null | grep -q 'Container Engine' &&
                 echo WELDED-CMD-PROJECT-LESS-OK
-    libvirt-verb-dispatches:
-        check: the libvirt verb dispatches through the out-of-process candy/plugin-vm and lists the host libvirt domains backing this disposable VM deployment
-        id: libvirt-verb-dispatches
-        libvirt: list
-        exit_status: 0
-        context:
-            - runtime
+            - check: the libvirt verb dispatches through the out-of-process candy/plugin-vm and lists the host libvirt domains backing this disposable VM deployment
+              id: libvirt-verb-dispatches
+              libvirt: list
+              exit_status: 0
+              context:
+                - runtime
 # Cross-deployment probing (pod→pod): a Chrome DRIVER pod (sibling member)
 # CDP-probes a separate web-server SUBJECT pod (sibling member) over the shared
 # `charly` network. Proves venue-from-position + ${HOST:<subject>} end-to-end —
@@ -413,40 +389,40 @@ check-cross-pod-cdp:
     web:
         pod:
             image: web
-        web-fixture-up:
-            check: http=http://127.0.0.1:${HOST_PORT:8080}/
-            id: web-fixture-up
-            context:
-                - runtime
-            plugin: http
-            plugin_input:
-                http: http://127.0.0.1:${HOST_PORT:8080}/
-                status: 200
-                body:
-                    - contains: charly-fixture-web-content-marker
+            plan:
+                - check: http=http://127.0.0.1:${HOST_PORT:8080}/
+                  id: web-fixture-up
+                  context:
+                    - runtime
+                  http:
+                    http: http://127.0.0.1:${HOST_PORT:8080}/
+                    status: 200
+                    body:
+                        - contains: charly-fixture-web-content-marker
     chrome:
         pod:
             image: chrome-headless
-        cdp-open-web-subject:
-            check: cdp=open
-            id: cdp-open-web-subject
-            cdp: open
-            url: http://${HOST:web}:8080
-            eventually: 45s
-            retry_interval: 3s
-            context:
-                - runtime
-        cdp-web-fixture-rendered:
-            check: cdp=text
-            id: cdp-web-fixture-rendered
-            cdp: text
-            tab: "1"
-            eventually: 30s
-            retry_interval: 3s
-            stdout:
-                - contains: charly-fixture-web-content-marker
-            context:
-                - runtime
+            plan:
+                - check: cdp=open
+                  id: cdp-open-web-subject
+                  cdp:
+                    method: open
+                    url: http://${HOST:web}:8080
+                  eventually: 45s
+                  retry_interval: 3s
+                  context:
+                    - runtime
+                - check: cdp=text
+                  id: cdp-web-fixture-rendered
+                  cdp:
+                    method: text
+                    tab: "1"
+                  eventually: 30s
+                  retry_interval: 3s
+                  stdout:
+                    - contains: charly-fixture-web-content-marker
+                  context:
+                    - runtime
 # =============================================================================
 # check-preempt-arbiter-pod — the R10 witness for the EXTERNALIZED resource ARBITER
 # DISPATCH (cutover C9, candy/plugin-preempt verb:arbiter). THE BED ITSELF is the exclusive
@@ -474,36 +450,31 @@ check-preempt-arbiter-pod:
         lifecycle: dev
         description: >-
             R10 witness of the externalized resource ARBITER DISPATCH (candy/plugin-preempt verb:arbiter, cutover C9). THIS bed is the exclusive CLAIMANT: it declares requires_exclusive:[test-lock] (a SYNTHETIC selector-less token, NO resource: gpu selector), so the check-runner's designed bed-arbiter path fires AcquireExclusive through the compiled-in verb:arbiter over the in-proc HostArbiter reverse channel BEFORE bring-up — calling the gather + resources host seams, persisting a transient lease held for the whole run, with applyMode SKIPPING the selector-less token (ZERO GPU). arbiter-claim-recorded asserts `charly preempt status` surfaces the lease (the externalized-dispatch + reverse-channel + persistence proof); driver-switch-dryrun proves the externalized GPU driver-switch dispatch (candy/plugin-gpu, C9 1B) hardware-free via `charly vm gpu plan`. LIVE preemption of a RUNNING holder is proven by the sibling check-preempt-live-pod group bed (and the seam-faked unit suite), not here (the runner pre-acquires the bed-root lease before any holder could run).
-    check-preempt-arbiter-pod-requires_exclusive:
         requires_exclusive:
             - test-lock
-    arbiter-claim-recorded:
-        check: the externalized arbiter recorded THIS bed's test-lock lease — AcquireExclusive dispatched through the compiled-in verb:arbiter + the HostArbiter reverse channel, and the lease surfaces via `charly preempt status`
-        id: arbiter-claim-recorded
-        context:
-            - runtime
-        eventually: 30s
-        retry_interval: 3s
-        plugin: command
-        plugin_input:
-            command: "charly preempt status"
-            in_container: false
-        stdout:
-            - contains: check-preempt-arbiter-pod
-            - contains: test-lock
-    driver-switch-dryrun:
-        check: the externalized GPU driver-switch (candy/plugin-gpu, C9 1B) dispatches hardware-free — `charly vm gpu plan vfio` returns the exact vfio-pci rebind commands WITHOUT touching sysfs
-        id: driver-switch-dryrun
-        context:
-            - runtime
-        plugin: command
-        plugin_input:
-            command: "charly vm gpu plan vfio"
-            in_container: false
-        stdout:
-            - contains: vfio-pci
-            - contains: driver_override
-
+        plan:
+            - check: the externalized arbiter recorded THIS bed's test-lock lease — AcquireExclusive dispatched through the compiled-in verb:arbiter + the HostArbiter reverse channel, and the lease surfaces via `charly preempt status`
+              id: arbiter-claim-recorded
+              context:
+                - runtime
+              eventually: 30s
+              retry_interval: 3s
+              command:
+                command: "charly preempt status"
+                in_container: false
+              stdout:
+                - contains: check-preempt-arbiter-pod
+                - contains: test-lock
+            - check: the externalized GPU driver-switch (candy/plugin-gpu, C9 1B) dispatches hardware-free — `charly vm gpu plan vfio` returns the exact vfio-pci rebind commands WITHOUT touching sysfs
+              id: driver-switch-dryrun
+              context:
+                - runtime
+              command:
+                command: "charly vm gpu plan vfio"
+                in_container: false
+              stdout:
+                - contains: vfio-pci
+                - contains: driver_override
 # =============================================================================
 # check-preempt-live-pod — LIVE preemption end-to-end: a preemptible HOLDER member
 # actually STOPPED by a requires_exclusive CLAIMANT member. This is the coverage
@@ -539,7 +510,6 @@ check-preempt-live-pod:
     preempt-holder:
         pod:
             image: check-pod
-        preempt-holder-preemptible:
             preemptible:
                 holds:
                     - test-lock
@@ -547,37 +517,32 @@ check-preempt-live-pod:
     preempt-taker:
         pod:
             image: check-pod
-        preempt-taker-requires_exclusive:
             requires_exclusive:
                 - test-lock
-        preemptor-lease-recorded:
-            check: the CLAIMANT member's exclusive test-lock lease was recorded — preempt-taker's own `charly start` (a group member, NOT the bed root) fired AcquireExclusive through the externalized verb:arbiter, and the persistent lease surfaces via `charly preempt status`
-            id: preemptor-lease-recorded
-            context:
-                - runtime
-            eventually: 30s
-            retry_interval: 3s
-            plugin: command
-            plugin_input:
-                command: "charly preempt status"
-                in_container: false
-            stdout:
-                - contains: preempt-taker
-                - contains: test-lock
-        preemptor-stopped-the-holder:
-            check: the RUNNING preemptible holder was actually preempted — the arbiter recorded preempt-holder as a stopped holder under the taker's lease (holdersToStop → stopHolders on a live pod), visible in the PREEMPTED HOLDERS column of `charly preempt status`
-            id: preemptor-stopped-the-holder
-            context:
-                - runtime
-            eventually: 30s
-            retry_interval: 3s
-            plugin: command
-            plugin_input:
-                command: "charly preempt status"
-                in_container: false
-            stdout:
-                - contains: preempt-holder
-
+            plan:
+                - check: the CLAIMANT member's exclusive test-lock lease was recorded — preempt-taker's own `charly start` (a group member, NOT the bed root) fired AcquireExclusive through the externalized verb:arbiter, and the persistent lease surfaces via `charly preempt status`
+                  id: preemptor-lease-recorded
+                  context:
+                    - runtime
+                  eventually: 30s
+                  retry_interval: 3s
+                  command:
+                    command: "charly preempt status"
+                    in_container: false
+                  stdout:
+                    - contains: preempt-taker
+                    - contains: test-lock
+                - check: the RUNNING preemptible holder was actually preempted — the arbiter recorded preempt-holder as a stopped holder under the taker's lease (holdersToStop → stopHolders on a live pod), visible in the PREEMPTED HOLDERS column of `charly preempt status`
+                  id: preemptor-stopped-the-holder
+                  context:
+                    - runtime
+                  eventually: 30s
+                  retry_interval: 3s
+                  command:
+                    command: "charly preempt status"
+                    in_container: false
+                  stdout:
+                    - contains: preempt-holder
 # Cross-deployment probing ACROSS KINDS (local→VM): a LOCAL (host) DRIVER member
 # curls a web-server SUBJECT running in a VM member. The driver reaches the guest's
 # nginx :80 via ${HOST:web-vm:80} → resolveCheckEndpoint's VM branch →
@@ -598,18 +563,16 @@ check-cross-vm-http:
     host-driver-vm:
         local:
             from: check-cross-local-driver
-        local-driver-reaches-vm:
-            check: command=curl -fsS http://${HOST:web-vm:80}/
-            id: local-driver-reaches-vm
-            eventually: 90s
-            retry_interval: 5s
-            stdout:
-                - contains: charly-fixture-vm-content-marker
-            context:
-                - runtime
-            plugin: command
-            plugin_input:
-                command: "curl -fsS http://${HOST:web-vm:80}/"
+            plan:
+                - check: command=curl -fsS http://${HOST:web-vm:80}/
+                  id: local-driver-reaches-vm
+                  eventually: 90s
+                  retry_interval: 5s
+                  stdout:
+                    - contains: charly-fixture-vm-content-marker
+                  context:
+                    - runtime
+                  command: "curl -fsS http://${HOST:web-vm:80}/"
 # Cross-deployment across kinds (local→pod): a LOCAL (host) DRIVER member curls a
 # web-server SUBJECT pod member via its published port. Exercises a NON-pod member
 # bring-up (`charly bundle add` the local driver) + venue-from-position dispatch +
@@ -623,32 +586,29 @@ check-cross-local-http:
     web-local:
         pod:
             image: web
-        web-fixture-up:
-            check: http=http://127.0.0.1:${HOST_PORT:8080}/
-            id: web-fixture-up
-            context:
-                - runtime
-            plugin: http
-            plugin_input:
-                http: http://127.0.0.1:${HOST_PORT:8080}/
-                status: 200
-                body:
-                    - contains: charly-fixture-web-content-marker
+            plan:
+                - check: http=http://127.0.0.1:${HOST_PORT:8080}/
+                  id: web-fixture-up
+                  context:
+                    - runtime
+                  http:
+                    http: http://127.0.0.1:${HOST_PORT:8080}/
+                    status: 200
+                    body:
+                        - contains: charly-fixture-web-content-marker
     host-driver:
         local:
             from: check-cross-local-driver
-        local-driver-reaches-web:
-            check: command=curl -fsS http://${HOST:web-local:8080}/
-            id: local-driver-reaches-web
-            eventually: 30s
-            retry_interval: 3s
-            stdout:
-                - contains: charly-fixture-web-content-marker
-            context:
-                - runtime
-            plugin: command
-            plugin_input:
-                command: "curl -fsS http://${HOST:web-local:8080}/"
+            plan:
+                - check: command=curl -fsS http://${HOST:web-local:8080}/
+                  id: local-driver-reaches-web
+                  eventually: 30s
+                  retry_interval: 3s
+                  stdout:
+                    - contains: charly-fixture-web-content-marker
+                  context:
+                    - runtime
+                  command: "curl -fsS http://${HOST:web-local:8080}/"
 # Disposable Fedora Cloud VM — the substrate for check-fedora-vm, which proves
 # the rpm localpkg AUTO-RESOLVE deploy path (build the opencharly .rpm in a
 # fedora container, dnf install onto the guest, mandatory deps auto-resolved).
@@ -715,7 +675,6 @@ web-vm:
                 - "echo 'charly-fixture-vm-content-marker' > /usr/share/nginx/html/index.html"
                 - "systemctl enable --now nginx"
                 - "systemctl enable --now qemu-guest-agent"
-    web-vm-libvirt:
         libvirt:
             devices:
                 channels:
@@ -740,7 +699,6 @@ check-cross-local-driver:
         description: |-
             Host venue for a cross-deployment local DRIVER member
             Minimal kind:local template establishing a host venue a sibling check drives by tree position.
-    check-cross-local-driver-candy:
         candy:
             - '@github.com/opencharly/charly/candy/check-cross-local-driver-layer:v2026.183.1359'
 discover:

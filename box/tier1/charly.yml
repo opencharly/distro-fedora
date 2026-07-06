@@ -1,6 +1,5 @@
 tier1:
     candy:
         base: fedora
-    tier1-candy:
         candy:
             - '@github.com/opencharly/charly/candy/check-tier1-layer:v2026.183.1359'

@@ -8,7 +8,6 @@ charly-fedora:
             pixi: fedora-builder
             npm: fedora-builder
             cargo: fedora-builder
-    charly-fedora-candy:
         candy:
             - '@github.com/opencharly/charly/candy/agent-forwarding:v2026.183.1359'
             - '@github.com/opencharly/charly/candy/supervisord:v2026.183.1359'

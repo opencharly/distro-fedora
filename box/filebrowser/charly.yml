@@ -1,7 +1,6 @@
 filebrowser:
     candy:
         base: fedora
-    filebrowser-candy:
         candy:
             - '@github.com/opencharly/charly/candy/agent-forwarding:v2026.183.1359'
             - '@github.com/opencharly/charly/candy/filebrowser:v2026.183.1359'

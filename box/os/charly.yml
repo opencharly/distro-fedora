@@ -1,7 +1,6 @@
 os:
     candy:
         base: fedora
-    os-candy:
         candy:
             - '@github.com/opencharly/charly/candy/supervisord:v2026.183.1359'
             - '@github.com/opencharly/charly/candy/os-layer:v2026.183.1359'

@@ -10,7 +10,6 @@ fedora:
             - pixi
             - npm
             - cargo
-    fedora-distro:
         distro:
             - fedora:43
             - fedora

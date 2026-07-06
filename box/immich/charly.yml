@@ -3,7 +3,6 @@ immich:
         base: fedora-nonfree
         platform:
             - linux/amd64
-    immich-candy:
         candy:
             - '@github.com/opencharly/charly/candy/agent-forwarding:v2026.183.1359'
             - '@github.com/opencharly/charly/candy/nodejs:v2026.183.1359'
