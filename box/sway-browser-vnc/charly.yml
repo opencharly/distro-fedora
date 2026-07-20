@@ -9,9 +9,9 @@ sway-browser-vnc:
         platform:
             - linux/amd64
         candy:
-            - '@github.com/opencharly/charly/candy/agent-forwarding:v2026.183.1359'
-            - '@github.com/opencharly/charly/candy/sway-desktop-vnc:v2026.183.1359'
-            - '@github.com/opencharly/charly/candy/dbus:v2026.183.1359'
+            - '@github.com/opencharly/charly/candy/agent-forwarding:v2026.201.0706'
+            - '@github.com/opencharly/charly/candy/sway-desktop-vnc:v2026.201.0706'
+            - '@github.com/opencharly/charly/candy/dbus:v2026.201.0706'
         # No box-level check: the full browser-VNC desktop verification (sway/wayvnc/
         # chrome binaries + the running cdp/vnc/wl/dbus/framebuffer probes) belongs
         # to candy/sway-desktop-vnc — the composite candy that assembles the

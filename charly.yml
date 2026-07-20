@@ -142,7 +142,7 @@ check-addcandy-pod:
         description: >-
             Sole proof of the add_candy-on-pod overlay-deploy path when deploy-key != image-name. A disposable pod bed whose deploy-key (check-addcandy-pod) differs from its image-name (check-pod) and which add_candy-overlays the pod-addcandy-marker layer (a /etc/pod-addcandy-marker file-write carrying POD-ADDCANDY-MARKER-OK AND a copy: of copied.dat to /etc/pod-addcandy-copied carrying POD-ADDCANDY-COPIED-OK). It asserts both files are present inside the RUNNING container — the write: leg proves the `<deploy-key>-overlay` image (which carries the add_candy layer) is the image `charly config`/`charly start` actually deployed (fails if the BASE check-pod image, without the markers, was deployed instead), and the copy: leg additionally proves the REMOTE add_candy candy's source tree was staged into the overlay build (`.build/_candy/<name>.<version>/`) so the per-candy scratch-stage COPY resolved. Reuses the already-built check-pod image so the bed stays light.
         add_candy:
-            - '@github.com/opencharly/charly/candy/pod-addcandy-marker:v2026.183.1359'
+            - '@github.com/opencharly/charly/candy/pod-addcandy-marker:v2026.201.0706'
         plan:
             - check: the pod-addcandy marker file is present inside the running container — proves the add_candy overlay actually deployed, not the base image
               id: addcandy-marker-deployed
@@ -186,8 +186,8 @@ check-stepkind-emit-pod:
         description: >-
             Sole proof of the F-STEP-EMIT BUILD leg — the pod-overlay OCITarget open external-step arm that bakes a class:step plugin's build-context Containerfile fragment. A disposable pod bed reusing the check-pod image that add_candy-overlays plugin-example-stepkind (the out-of-tree class:step plugin declaring StepContract emits=true + serving OpEmit) and stepkind-build-consumer (a candy with a BUILD-context run: plugin: examplestepkind step). At the overlay build charly lowers the run-step to an external step (external:examplestepkind), OCITarget.emitExternalStep consults the plugin's declared Emits=true, Invokes its OpEmit, and splices the returned Containerfile RUN — baking /etc/examplestepkind-build-baked (carrying STEPKIND-BUILD-BAKED-OK) into the overlay image. Asserts the file is present inside the RUNNING container, so it passes iff the OpEmit fragment baked through the external-step arm and the overlay (not the base check-pod image) deployed.
         add_candy:
-            - '@github.com/opencharly/charly/candy/plugin-example-stepkind:v2026.183.1359'
-            - '@github.com/opencharly/charly/candy/stepkind-build-consumer:v2026.183.1359'
+            - '@github.com/opencharly/charly/candy/plugin-example-stepkind:v2026.201.0706'
+            - '@github.com/opencharly/charly/candy/stepkind-build-consumer:v2026.201.0706'
         plan:
             - check: the external-step OpEmit fragment baked — /etc/examplestepkind-build-baked is present inside the running container carrying STEPKIND-BUILD-BAKED-OK, proving the OCITarget external-step build-emit arm spliced the plugin's OpEmit fragment into the overlay image
               id: stepkind-emit-baked-deployed
@@ -321,7 +321,7 @@ check-fedora-vm:
         lifecycle: dev
         description: Sole proof of the rpm localpkg AUTO-RESOLVE deploy path — the opencharly .rpm built from pkg/fedora installs onto a Fedora Cloud guest and dnf auto-resolves its mandatory deps. Disposable Fedora Cloud 43 libvirt VM, overlays the add_candy charly layer whose localpkg builds and dnf-installs the opencharly rpm, then asserts rpm -q opencharly/podman/libvirt/tailscale/gocryptfs + charly version (LOCALPKG-RPM-AUTORESOLVE-OK).
         add_candy:
-            - '@github.com/opencharly/charly/candy/charly:v2026.183.1359'
+            - '@github.com/opencharly/charly/candy/charly:v2026.201.0706'
         install_opts:
             allow_repo_changes: true
             allow_root_tasks: true
@@ -700,7 +700,7 @@ check-cross-local-driver:
             Host venue for a cross-deployment local DRIVER member
             Minimal kind:local template establishing a host venue a sibling check drives by tree position.
         candy:
-            - '@github.com/opencharly/charly/candy/check-cross-local-driver-layer:v2026.183.1359'
+            - '@github.com/opencharly/charly/candy/check-cross-local-driver-layer:v2026.201.0706'
 discover:
     - path: box
       recursive: true

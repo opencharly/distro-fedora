@@ -9,6 +9,6 @@ fedora-test:
             npm: fedora-builder
             cargo: fedora-builder
         candy:
-            - '@github.com/opencharly/charly/candy/agent-forwarding:v2026.183.1359'
-            - '@github.com/opencharly/charly/candy/traefik:v2026.183.1359'
-            - '@github.com/opencharly/charly/candy/testapi:v2026.183.1359'
+            - '@github.com/opencharly/charly/candy/agent-forwarding:v2026.201.0706'
+            - '@github.com/opencharly/charly/candy/traefik:v2026.201.0706'
+            - '@github.com/opencharly/charly/candy/testapi:v2026.201.0706'

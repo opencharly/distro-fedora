@@ -2,7 +2,7 @@ composition-source:
     candy:
         base: fedora
         candy:
-            - '@github.com/opencharly/charly/candy/charly:v2026.183.1359'
+            - '@github.com/opencharly/charly/candy/charly:v2026.201.0706'
         plan:
             - check: command=test -x /usr/bin/charly
               id: composition-source-charly
