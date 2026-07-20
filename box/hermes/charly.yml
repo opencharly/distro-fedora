@@ -2,9 +2,9 @@ hermes:
     candy:
         base: fedora
         candy:
-            - '@github.com/opencharly/charly/candy/agent-forwarding:v2026.183.1359'
-            - '@github.com/opencharly/charly/candy/hermes-full:v2026.183.1359'
-            - '@github.com/opencharly/charly/candy/dbus:v2026.183.1359'
+            - '@github.com/opencharly/charly/candy/agent-forwarding:v2026.201.0706'
+            - '@github.com/opencharly/charly/candy/hermes-full:v2026.201.0706'
+            - '@github.com/opencharly/charly/candy/dbus:v2026.201.0706'
         # No box-level check: the claude/codex/gemini CLIs and the hermes binary +
         # service belong to their candies' check (claude-code/codex/gemini via
         # hermes-full, and hermes' own hermes-binary/hermes-service-running) — one

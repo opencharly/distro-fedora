@@ -2,4 +2,4 @@ selftest-image:
     candy:
         base: fedora
         candy:
-            - '@github.com/opencharly/charly/candy/charly:v2026.183.1359'
+            - '@github.com/opencharly/charly/candy/charly:v2026.201.0706'

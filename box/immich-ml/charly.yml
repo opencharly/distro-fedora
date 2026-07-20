@@ -4,17 +4,17 @@ immich-ml:
         platform:
             - linux/amd64
         candy:
-            - '@github.com/opencharly/charly/candy/agent-forwarding:v2026.183.1359'
-            - '@github.com/opencharly/charly/candy/nodejs:v2026.183.1359'
-            - '@github.com/opencharly/charly/candy/cuda:v2026.183.1359'
-            - '@github.com/opencharly/charly/candy/python-ml:v2026.183.1359'
-            - '@github.com/opencharly/charly/candy/supervisord:v2026.183.1359'
-            - '@github.com/opencharly/charly/candy/postgresql:v2026.183.1359'
-            - '@github.com/opencharly/charly/candy/vectorchord:v2026.183.1359'
-            - '@github.com/opencharly/charly/candy/redis:v2026.183.1359'
-            - '@github.com/opencharly/charly/candy/immich:v2026.183.1359'
-            - '@github.com/opencharly/charly/candy/immich-ml:v2026.183.1359'
-            - '@github.com/opencharly/charly/candy/dbus:v2026.183.1359'
+            - '@github.com/opencharly/charly/candy/agent-forwarding:v2026.201.0706'
+            - '@github.com/opencharly/charly/candy/nodejs:v2026.201.0706'
+            - '@github.com/opencharly/charly/candy/cuda:v2026.201.0706'
+            - '@github.com/opencharly/charly/candy/python-ml:v2026.201.0706'
+            - '@github.com/opencharly/charly/candy/supervisord:v2026.201.0706'
+            - '@github.com/opencharly/charly/candy/postgresql:v2026.201.0706'
+            - '@github.com/opencharly/charly/candy/vectorchord:v2026.201.0706'
+            - '@github.com/opencharly/charly/candy/redis:v2026.201.0706'
+            - '@github.com/opencharly/charly/candy/immich:v2026.201.0706'
+            - '@github.com/opencharly/charly/candy/immich-ml:v2026.201.0706'
+            - '@github.com/opencharly/charly/candy/dbus:v2026.201.0706'
         plan:
             - check: command=supervisorctl status postgresql redis immich-server immich-ml | awk '{print $2}' | sort -u
               id: immich-ml-services-running
