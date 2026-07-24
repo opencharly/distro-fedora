@@ -238,6 +238,59 @@ check-enc-pod:
               command: "echo ENC-BED-OK > /home/user/.enc-data/charly-bed-marker && cat /home/user/.enc-data/charly-bed-marker"
               stdout:
                 - contains: "ENC-BED-OK"
+# check-enc-port-pod — R10 witness for the round-3 config-flow ORDERING regression (RCA'd
+# 2026-07-24, team-lead, opencharly/charly#183): config_setup.go's port-resolution block runs
+# BEFORE resolveDeployVolumes and writes the per-host overlay entry (ResolvedPort) the moment a
+# deploy has ANY container port — so on a PORTED deploy's FIRST `charly config`, the overlay key
+# already exists before the volume fallback ever inspects it. Gating that fallback on mere
+# overlay-key existence (the round-2 fix) silently DROPPED a genuine project-declared `volume:`
+# override in exactly this shape. check-enc-pod ALONE never exercises this: it reuses the
+# check-pod image, which declares no port, so its overlay key stays absent until the volume
+# fallback itself creates it — the ordering hazard is invisible there. This bed reuses the `web`
+# candy instead (web-layer, port: [8080], auto-allocated host port — PORT AUTO-ALLOCATION, never
+# a hardcoded host port) specifically BECAUSE it has a port, and adds its OWN project-declared
+# `type: encrypted` volume override, proving BOTH: the port resolves + is reachable (the port
+# block ran, same as any ported deploy) AND the encrypted volume is initialized + mounted (the
+# project-declared-volume fallback still fired on this deploy's first config despite the port
+# block's prior overlay write) — the exact live scenario the VolumeProjectChecked marker fixes
+# (candy/plugin-deploy-pod/config_setup_helpers.go). Passphrase via the GOCRYPTFS_PASSWORD env
+# hook, same as check-enc-pod; the bed host needs gocryptfs + fusermount3 + a user systemd
+# session.
+check-enc-port-pod:
+    pod:
+        image: web
+        disposable: true
+        lifecycle: dev
+        description: >-
+            R10 witness for the round-3 config-flow ordering regression (opencharly/charly#183): proves a PORTED deploy's PROJECT-declared `volume:` override still applies on its first `charly config` despite the port-resolution block running first and pre-creating the per-host overlay entry. Reuses the `web` candy (web-layer, port: [8080], auto-allocated host port) and adds a project-declared type: encrypted volume override — the companion to check-enc-pod, which alone declares no port and so never exercises this ordering hazard. Asserts BOTH the port resolves and is reachable (the port block ran, exactly as for any ported deploy) AND the encrypted volume is initialized and mounted (the project-declared-volume fallback still fired). Passphrase via the GOCRYPTFS_PASSWORD env hook (resolveEncPassphrase source 1) — export it for the run; the bed host needs gocryptfs + fusermount3 + a user systemd session. PRECONDITION (like check-enc-pod): this bed's enc secret must be pre-seeded once — `charly secrets set charly/enc check-enc-port-pod <passphrase>` — matching the GOCRYPTFS_PASSWORD value, BEFORE its first `charly check run`. Root cause (RCA'd 2026-07-24): `ResolveEncPassphrase`'s env-var branch (`sdk/deploykit/enc_passphrase.go`, source 1) never persists to the credential store the way its auto-generate branch does, so a brand-new bed's systemd-driven non-interactive re-config (`ExecStartPre`, no env var visible) cannot find the passphrase and times out after 2 minutes — a standing enc-mechanism gap tracked for the next thematic batch (mirror the auto-generate branch's `cred.Write`), not something this bed's own R10 masks: the volume-resolution fix itself is proven at the earlier `config`/mount step, independent of this precondition.
+        volume:
+            - name: enc-port-data
+              type: encrypted
+              path: /home/user/.enc-port-data
+        plan:
+            - check: http=http://127.0.0.1:${HOST_PORT:8080}/ — the port-resolution block ran normally for a ported deploy
+              id: enc-port-web-up
+              context:
+                - runtime
+              http:
+                http: http://127.0.0.1:${HOST_PORT:8080}/
+                status: 200
+            - check: host-side `charly config status` reports the encrypted volume initialized AND mounted despite the deploy having ports — the project-declared-volume fallback was not suppressed by the port block's prior overlay write
+              id: enc-port-status-mounted
+              context:
+                - runtime
+              command:
+                command: charly config status check-enc-port-pod
+                in_container: false
+              stdout:
+                - matches: "enc-port-data\\s+yes\\s+yes"
+            - check: the FUSE-backed plain dir is bind-mounted into the container and writable — a written marker reads back
+              id: enc-port-plain-writable
+              context:
+                - runtime
+              command: "echo ENC-PORT-BED-OK > /home/user/.enc-port-data/charly-bed-marker && cat /home/user/.enc-port-data/charly-bed-marker"
+              stdout:
+                - contains: "ENC-PORT-BED-OK"
 # check-tunnel-pod — the RESOURCE-FREE R10 for the externalized tunnel EXECUTION leg
 # (candy/plugin-tunnel, verb:tunnel; C16b). plugin-tunnel is COMPILED INTO charly
 # (compiled_plugins), so — exactly like check-enc-pod exercises the compiled-in
