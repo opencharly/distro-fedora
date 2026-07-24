@@ -429,8 +429,9 @@ check-cross-pod-cdp:
 # CLAIMANT: it declares requires_exclusive:[test-lock] (a SYNTHETIC selector-less token
 # — NO resource: gpu selector), so the check-runner's DESIGNED bed-arbiter path
 # (check_bed_run.go acquires the bed's lease BEFORE bring-up, held through the whole run)
-# fires AcquireExclusive through the compiled-in verb:arbiter over the in-proc HostArbiter
-# reverse channel — calling the gather + resources host seams + persisting a lease, with
+# fires AcquireExclusive through the compiled-in verb:arbiter over the in-proc
+# resolved-project envelope (Executor.HostBuild("resolved-project")) — calling the gather +
+# resources host seams + persisting a lease, with
 # applyMode SKIPPING the selector-less token (ZERO GPU). This proves the arbiter DISPATCH +
 # reverse channel + persistence for a bed-root claimant (the runner pre-acquires the root's
 # lease as its FIRST action, so no holder is running yet — this bed does not stop a holder).
@@ -449,11 +450,11 @@ check-preempt-arbiter-pod:
         disposable: true
         lifecycle: dev
         description: >-
-            R10 witness of the externalized resource ARBITER DISPATCH (candy/plugin-preempt verb:arbiter, cutover C9). THIS bed is the exclusive CLAIMANT: it declares requires_exclusive:[test-lock] (a SYNTHETIC selector-less token, NO resource: gpu selector), so the check-runner's designed bed-arbiter path fires AcquireExclusive through the compiled-in verb:arbiter over the in-proc HostArbiter reverse channel BEFORE bring-up — calling the gather + resources host seams, persisting a transient lease held for the whole run, with applyMode SKIPPING the selector-less token (ZERO GPU). arbiter-claim-recorded asserts `charly preempt status` surfaces the lease (the externalized-dispatch + reverse-channel + persistence proof); driver-switch-dryrun proves the externalized GPU driver-switch dispatch (candy/plugin-gpu, C9 1B) hardware-free via `charly vm gpu plan`. LIVE preemption of a RUNNING holder is proven by the sibling check-preempt-live-pod group bed (and the seam-faked unit suite), not here (the runner pre-acquires the bed-root lease before any holder could run).
+            R10 witness of the externalized resource ARBITER DISPATCH (candy/plugin-preempt verb:arbiter, cutover C9). THIS bed is the exclusive CLAIMANT: it declares requires_exclusive:[test-lock] (a SYNTHETIC selector-less token, NO resource: gpu selector), so the check-runner's designed bed-arbiter path fires AcquireExclusive through the compiled-in verb:arbiter over the in-proc resolved-project envelope (Executor.HostBuild("resolved-project")) BEFORE bring-up — calling the gather + resources host seams, persisting a transient lease held for the whole run, with applyMode SKIPPING the selector-less token (ZERO GPU). arbiter-claim-recorded asserts `charly preempt status` surfaces the lease (the externalized-dispatch + reverse-channel + persistence proof); driver-switch-dryrun proves the externalized GPU driver-switch dispatch (candy/plugin-gpu, C9 1B) hardware-free via `charly vm gpu plan`. LIVE preemption of a RUNNING holder is proven by the sibling check-preempt-live-pod group bed (and the seam-faked unit suite), not here (the runner pre-acquires the bed-root lease before any holder could run).
         requires_exclusive:
             - test-lock
         plan:
-            - check: the externalized arbiter recorded THIS bed's test-lock lease — AcquireExclusive dispatched through the compiled-in verb:arbiter + the HostArbiter reverse channel, and the lease surfaces via `charly preempt status`
+            - check: the externalized arbiter recorded THIS bed's test-lock lease — AcquireExclusive dispatched through the compiled-in verb:arbiter + the resolved-project envelope, and the lease surfaces via `charly preempt status`
               id: arbiter-claim-recorded
               context:
                 - runtime
@@ -549,8 +550,10 @@ check-preempt-live-pod:
 # trip (deploykit.StopPodService/StartPodService); this bed proves the SIBLING VM-venue
 # branch of the SAME moved code (candy/plugin-preempt/holder_dispatch.go's
 # pluginHolderStop/pluginHolderStart, addr.Vm != "" path) — stopVMPlugin/startVMPlugin
-# dispatched via sdk.Executor.InvokeProvider(ClassVerb, "libvirt", …) rather than a
-# HostArbiter callback, and the SAME kit.ReadinessProvider()-gated wait-until-stopped
+# dispatched via sdk.Executor.InvokeProvider(ClassVerb, "libvirt", …) (never the
+# resolved-project envelope leg — that leg (K1-unblock wave 1) covers only the
+# gather/resources seams and is unrelated to this stop/start dispatch leg), and the
+# SAME kit.ReadinessProvider()-gated wait-until-stopped
 # poll the pod path uses.
 #
 # Shape: a GROUP bed (no workload root) with a vm: HOLDER member (preempt-vm-holder,
@@ -582,7 +585,7 @@ check-preempt-vm-live:
         disposable: true
         lifecycle: dev
         description: >-
-            R10 witness of LIVE resource preemption on a VM-VENUE holder — the sibling of check-preempt-live-pod's pod-venue proof, covering candy/plugin-preempt/holder_dispatch.go's pluginHolderStop/pluginHolderStart addr.Vm!="" branch (stopVMPlugin/startVMPlugin dispatched via sdk.Executor.InvokeProvider(ClassVerb,"libvirt",…), not a HostArbiter callback). A GROUP bed with a vm: HOLDER member (preempt-vm-holder, `from: web-vm`, preemptible: holds:[vm-test-lock]) and a pod: CLAIMANT member (preempt-vm-taker, requires_exclusive:[vm-test-lock], a DISTINCT token from the pod-only beds' test-lock so concurrent bed runs never contend for the same resource); bringUpMembers' deterministic sortedMemberKeys brings the vm holder up FIRST, then the taker, whose own `charly start` fires AcquireExclusive → the arbiter finds the RUNNING vm holder → stopHolders → pluginHolderStop gracefully shuts the VM down (libvirt) and polls (kit.ReadinessProvider()-gated) until it is actually stopped → records a persistent lease. preemptor-vm-lease-recorded asserts `charly preempt status` surfaces the taker's vm-test-lock lease; preemptor-vm-stopped-the-holder asserts the vm holder is recorded as a preempted (stopped) holder. ZERO GPU (vm-test-lock is selector-less, applyMode skips the flip on every host); the GPU switchMode/ensureCDI InvokeProvider path stays code-verified only (no disposable bed here can allocate a real GPU token). On teardown the taker's `charly remove` → releaseResourceClaim → restoreHolders restarts the VM.
+            R10 witness of LIVE resource preemption on a VM-VENUE holder — the sibling of check-preempt-live-pod's pod-venue proof, covering candy/plugin-preempt/holder_dispatch.go's pluginHolderStop/pluginHolderStart addr.Vm!="" branch (stopVMPlugin/startVMPlugin dispatched via sdk.Executor.InvokeProvider(ClassVerb,"libvirt",…), never a host-side reverse-RPC callback). A GROUP bed with a vm: HOLDER member (preempt-vm-holder, `from: web-vm`, preemptible: holds:[vm-test-lock]) and a pod: CLAIMANT member (preempt-vm-taker, requires_exclusive:[vm-test-lock], a DISTINCT token from the pod-only beds' test-lock so concurrent bed runs never contend for the same resource); bringUpMembers' deterministic sortedMemberKeys brings the vm holder up FIRST, then the taker, whose own `charly start` fires AcquireExclusive → the arbiter finds the RUNNING vm holder → stopHolders → pluginHolderStop gracefully shuts the VM down (libvirt) and polls (kit.ReadinessProvider()-gated) until it is actually stopped → records a persistent lease. preemptor-vm-lease-recorded asserts `charly preempt status` surfaces the taker's vm-test-lock lease; preemptor-vm-stopped-the-holder asserts the vm holder is recorded as a preempted (stopped) holder. ZERO GPU (vm-test-lock is selector-less, applyMode skips the flip on every host); the GPU switchMode/ensureCDI InvokeProvider path stays code-verified only (no disposable bed here can allocate a real GPU token). On teardown the taker's `charly remove` → releaseResourceClaim → restoreHolders restarts the VM.
     preempt-vm-holder:
         vm:
             from: web-vm
