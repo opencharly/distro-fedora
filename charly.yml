@@ -550,10 +550,10 @@ check-preempt-live-pod:
 # trip (deploykit.StopPodService/StartPodService); this bed proves the SIBLING VM-venue
 # branch of the SAME moved code (candy/plugin-preempt/holder_dispatch.go's
 # pluginHolderStop/pluginHolderStart, addr.Vm != "" path) — stopVMPlugin/startVMPlugin
-# dispatched via sdk.Executor.InvokeProvider(ClassVerb, "libvirt", …) (never a host-side
-# reverse-RPC callback — the arbiter's separately-retired ExecutorService.HostArbiter RPC,
-# K1-unblock wave 1, covered only the gather/resources seams and is unrelated to this
-# stop/start dispatch leg), and the SAME kit.ReadinessProvider()-gated wait-until-stopped
+# dispatched via sdk.Executor.InvokeProvider(ClassVerb, "libvirt", …) (never the
+# resolved-project envelope leg — that leg (K1-unblock wave 1) covers only the
+# gather/resources seams and is unrelated to this stop/start dispatch leg), and the
+# SAME kit.ReadinessProvider()-gated wait-until-stopped
 # poll the pod path uses.
 #
 # Shape: a GROUP bed (no workload root) with a vm: HOLDER member (preempt-vm-holder,
