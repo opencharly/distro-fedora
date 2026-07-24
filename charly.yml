@@ -199,24 +199,32 @@ check-stepkind-emit-pod:
                 contains:
                     - contains: "STEPKIND-BUILD-BAKED-OK"
 # check-enc-pod — encrypted-volume (gocryptfs) mount path end-to-end through the
-# EXTERNALIZED candy/plugin-enc (C16a). Reuses the check-pod image and adds a
-# deploy-only `type: encrypted` volume; the bed's `charly config` step runs charly's
-# in-core enc shim (encPlanFor host-prelift → verb:enc OpExecute), which drives
+# EXTERNALIZED candy/plugin-enc (C16a) AND, since wave γ, candy/plugin-pod's `charly
+# config` leaves (enc_cmd.go — verb:enc/verb:credential dispatched via InvokeProvider,
+# no core round-trip). Reuses the check-pod image and adds a deploy-only `type:
+# encrypted` volume; the bed's implicit `charly config` (Setup) step drives
 # `gocryptfs -init` then `systemd-run --scope --user gocryptfs -allow_other` on the
-# host, after which the container binds the FUSE plain dir. This is the sole R10 that
-# exercises the extracted plugin-enc mount mechanics end-to-end. Passphrase is
-# supplied via the GOCRYPTFS_PASSWORD env hook (resolveEncPassphrase source 1) — the
+# host, after which the container binds the FUSE plain dir. Beyond that implicit
+# mount, the plan ALSO round-trips `charly config mount/unmount/status/passwd` as
+# STANDALONE CLI invocations (wave γ's ADE check-coverage obligation —
+# scratchpad/wave-gamma-scoping-map.md — no bed previously exercised those four
+# leaves directly, only the implicit Setup-time mount). Passphrase is supplied via
+# the GOCRYPTFS_PASSWORD env hook (deploykit.ResolveEncPassphrase source 1) — the
 # operator exports it for the run, e.g.
 #   GOCRYPTFS_PASSWORD=charly-bed charly check run check-enc-pod
-# The bed host needs gocryptfs + fusermount3 + a user systemd session (the `charly`
-# candy's declared deps). Reuses the already-built check-pod image so the bed is light.
+# `charly config passwd`'s old/new/confirm prompts are driven non-interactively via
+# the GOCRYPTFS_OLD_PASSWORD/GOCRYPTFS_NEW_PASSWORD env hook (candy/plugin-pod/
+# enc_cmd.go's pluginAskPassword — the same "1. Test/CI override" precedent
+# extended to the passwd-change path). The bed host needs gocryptfs + fusermount3 +
+# a user systemd session (the `charly` candy's declared deps). Reuses the
+# already-built check-pod image so the bed is light.
 check-enc-pod:
     pod:
         image: check-pod
         disposable: true
         lifecycle: dev
         description: >-
-            Sole proof of the encrypted-volume (gocryptfs) mount path end-to-end through the externalized candy/plugin-enc (C16a). Reuses the check-pod image and adds a deploy-only type: encrypted volume (enc-data -> /home/user/.enc-data); the bed's `charly config` step runs charly's in-core enc shim (encPlanFor host-prelift -> verb:enc OpExecute), which drives `gocryptfs -init` then `systemd-run --scope --user gocryptfs -allow_other` on the host, after which the container binds the FUSE plain dir. Asserts host-side `charly config status check-enc-pod` reports the volume initialized AND mounted (encStatus, still core), and an in-container write to the mount point reads back (the FUSE-backed plain dir is bind-mounted + writable). Passphrase via the GOCRYPTFS_PASSWORD env hook (resolveEncPassphrase source 1) — export it for the run; the bed host needs gocryptfs + fusermount3 + a user systemd session.
+            Proof of the encrypted-volume (gocryptfs) mount path end-to-end through the externalized candy/plugin-enc (C16a) and, since wave γ, candy/plugin-pod's `charly config` leaves (verb:enc/verb:credential via InvokeProvider). Reuses the check-pod image and adds a deploy-only type: encrypted volume (enc-data -> /home/user/.enc-data); the bed's implicit `charly config` (Setup) step drives `gocryptfs -init` then `systemd-run --scope --user gocryptfs -allow_other` on the host, after which the container binds the FUSE plain dir. Asserts host-side `charly config status check-enc-pod` reports the volume initialized AND mounted, and an in-container write to the mount point reads back. Beyond the implicit mount, standalone `charly config unmount`/`mount`/`status`/`passwd` invocations round-trip the volume (unmount, confirm, remount, confirm the marker survived, unmount again, change the passphrase non-interactively via GOCRYPTFS_OLD_PASSWORD/GOCRYPTFS_NEW_PASSWORD, remount with the rotated password, confirm mounted) — proving all four CLI leaves work through their new plugin-side dispatch, not just the implicit Setup-time mount. Passphrase via the GOCRYPTFS_PASSWORD env hook — export it for the run; the bed host needs gocryptfs + fusermount3 + a user systemd session.
         volume:
             - name: enc-data
               type: encrypted
@@ -238,6 +246,68 @@ check-enc-pod:
               command: "echo ENC-BED-OK > /home/user/.enc-data/charly-bed-marker && cat /home/user/.enc-data/charly-bed-marker"
               stdout:
                 - contains: "ENC-BED-OK"
+            # enc-unmount-standalone through enc-status-final-mounted — wave γ's ADE
+            # check-coverage obligation (scratchpad/wave-gamma-scoping-map.md §"R10 roster"):
+            # no bed previously round-tripped `charly config mount/unmount/status/passwd` as
+            # STANDALONE CLI invocations (as opposed to the implicit mount `charly config`
+            # (Setup) already performs above). These five steps drive all four leaves through
+            # their NEW dispatch path (candy/plugin-pod's enc_cmd.go — verb:enc/verb:credential
+            # via InvokeProvider, no core round-trip) — a test that would FAIL if the port
+            # silently dropped a step, broke the CLI grammar, or broke the InvokeProvider
+            # plumbing. `charly config passwd`'s old/new/confirm prompts are driven
+            # non-interactively via GOCRYPTFS_OLD_PASSWORD/GOCRYPTFS_NEW_PASSWORD (mirroring
+            # the existing GOCRYPTFS_PASSWORD mount-path env hook — see
+            # candy/plugin-pod/enc_cmd.go's pluginAskPassword).
+            - check: standalone `charly config unmount` succeeds and status confirms unmounted (still initialized)
+              id: enc-unmount-standalone
+              context:
+                - runtime
+              command:
+                command: charly config unmount check-enc-pod && charly config status check-enc-pod
+                in_container: false
+              stdout:
+                - matches: "enc-data\\s+yes\\s+no"
+            - check: standalone `charly config mount` (re-mount) succeeds, status confirms mounted, and the earlier marker survived the round-trip
+              id: enc-mount-standalone
+              context:
+                - runtime
+              command:
+                command: charly config mount check-enc-pod && charly config status check-enc-pod
+                in_container: false
+              stdout:
+                - matches: "enc-data\\s+yes\\s+yes"
+            - check: the marker written before the unmount/remount round-trip is still readable — the same cipher data, not a fresh empty volume
+              id: enc-plain-survives-remount
+              context:
+                - runtime
+              command: cat /home/user/.enc-data/charly-bed-marker
+              stdout:
+                - contains: "ENC-BED-OK"
+            - check: unmounting again (passwd requires every volume unmounted first) succeeds
+              id: enc-unmount-for-passwd
+              context:
+                - runtime
+              command:
+                command: charly config unmount check-enc-pod
+                in_container: false
+              exit_status: 0
+            - check: standalone `charly config passwd` (non-interactive via the GOCRYPTFS_OLD_PASSWORD/GOCRYPTFS_NEW_PASSWORD env hook) succeeds
+              id: enc-passwd-standalone
+              context:
+                - runtime
+              command:
+                command: GOCRYPTFS_OLD_PASSWORD="$GOCRYPTFS_PASSWORD" GOCRYPTFS_NEW_PASSWORD=charly-bed-rotated charly config passwd check-enc-pod
+                in_container: false
+              exit_status: 0
+            - check: mounting with the ROTATED password succeeds and status confirms mounted — proves the passwd change actually took effect, not a no-op
+              id: enc-status-final-mounted
+              context:
+                - runtime
+              command:
+                command: GOCRYPTFS_PASSWORD=charly-bed-rotated charly config mount check-enc-pod && charly config status check-enc-pod
+                in_container: false
+              stdout:
+                - matches: "enc-data\\s+yes\\s+yes"
 # check-tunnel-pod — the RESOURCE-FREE R10 for the externalized tunnel EXECUTION leg
 # (candy/plugin-tunnel, verb:tunnel; C16b). plugin-tunnel is COMPILED INTO charly
 # (compiled_plugins), so — exactly like check-enc-pod exercises the compiled-in
