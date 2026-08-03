@@ -60,6 +60,42 @@ check-fedora-test-pod:
         disposable: true
         lifecycle: dev
         description: Sole proof of plain HTTP service serving — the traefik reverse-proxy + FastAPI testapi composition on the Fedora base, the only pod bed whose primary feature is plain HTTP. Builds the fedora-test pod on fedora (testapi pixi multistage), deploys it, and runs traefik+testapi baked checks — binary/file presence, service running, http probes on the traefik API port and testapi /health and /.
+# tutorial-shell-dev — the bed that keeps the DOCUMENTED example honest.
+# box/tutorial-shell is the box quoted end to end in opencharly.ai's quickstart and
+# concepts pages. Because the site excerpts it rather than paraphrasing it, this bed
+# is what stops the published example from rotting: the moment the box stops
+# building, stops composing, or stops reaching steady state, the R10 roster fails —
+# instead of a reader discovering it by pasting a snippet that no longer works.
+tutorial-shell-dev:
+    pod:
+        image: tutorial-shell
+        disposable: true
+        lifecycle: dev
+        description: >-
+            Sole proof of the DOCUMENTED teaching example — the tutorial-shell box that
+            opencharly.ai quotes verbatim in its quickstart and concepts curriculum. Builds
+            the three-candy box (supervisord + ripgrep + sshd) on the bare Fedora base,
+            deploys it as a pod, and proves the taught claims hold on a live deployment: the
+            sshd service the SERVICE candy declares is actually running under the supervisord
+            init, and the TOOL candy's binary is usable in the same running container. The
+            box's own cross-candy composition checks ran at image scope; this bed adds what
+            only a live deployment can show — that the composed service came up.
+        plan:
+            - check: the sshd service the service candy declared is running under the supervisord init in the live pod
+              id: tutorial-shell-dev-service-running
+              service:
+                service: sshd
+                running: true
+              context:
+                - runtime
+            - check: the tool candy's binary is usable inside the running pod, not merely present in the image
+              id: tutorial-shell-dev-tool-usable
+              exit_status: 0
+              stdout:
+                - matches: "ripgrep [0-9]"
+              command: rg --version
+              context:
+                - runtime
 # check-sway-browser-vnc-pod deploys the SHIPPING sway-browser-vnc image
 # (Sway desktop + Chrome + wayvnc) on the Fedora base. The image bakes
 # binaries/services/cdp/vnc/wl/dbus + mcp (chrome-devtools-mcp layer); the
