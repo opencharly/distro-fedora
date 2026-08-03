@@ -74,11 +74,16 @@ check-tutorial-shell:
         description: >-
             Sole proof of the DOCUMENTED teaching example — the tutorial-shell box that
             opencharly.ai quotes verbatim in its quickstart and concepts curriculum. Builds the
-            three-candy box (supervisord + ripgrep + sshd) on the bare Fedora base, deploys it as
-            a pod, brings it to steady state, and does it again after a fresh rebuild. The
+            two-candy box (ripgrep + sshd) on the bare Fedora base, deploys it as a pod, brings it
+            to steady state, and does it again after a fresh rebuild. The box composes NO init:
+            sshd declares a service:, so charly resolves the init the target needs and injects it
+            — supervisord for this container image, nothing extra for a machine venue. The
             acceptance content is the composed candies' own runtime probes — sshd's service and
-            published-port checks, supervisord's control-socket check — plus the box's image-scope
-            composition check. Carries no plan: of its own. A bed earns its own steps only for a
+            published-port checks — PLUS the injected init's own probes, among them supervisord's
+            control-socket check, which is the proof that an injected candy still contributes its
+            acceptance plan and not merely its binary. The box's image-scope check asserts the
+            wiring itself: [program:sshd] in the assembled supervisord config, a block neither
+            composed candy produces on its own. Carries no plan: of its own. A bed earns its own steps only for a
             claim that needs a LIVE deployment AND that no composed candy already makes — the
             local example is check-sway-browser-vnc-pod, which adds cdp/wl/record probes against a
             running desktop. Every live claim here is already covered by the composed candies'
