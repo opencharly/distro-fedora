@@ -78,9 +78,12 @@ check-tutorial-shell:
             a pod, brings it to steady state, and does it again after a fresh rebuild. The
             acceptance content is the composed candies' own runtime probes — sshd's service and
             published-port checks, supervisord's control-socket check — plus the box's image-scope
-            composition check. Carries no plan: of its own, like every other consumer-image bed in
-            this file: re-stating a candy's probe on the bed that deploys it would duplicate the
-            candy (R3), and the duplicate would pass for the wrong reason.
+            composition check. Carries no plan: of its own. A bed earns its own steps only for a
+            claim that needs a LIVE deployment AND that no composed candy already makes — the
+            local example is check-sway-browser-vnc-pod, which adds cdp/wl/record probes against a
+            running desktop. Every live claim here is already covered by the composed candies'
+            runtime probes, so a bed plan could only duplicate them (R3), and the duplicate would
+            pass for the wrong reason: testing the candy rather than this deployment.
 # check-sway-browser-vnc-pod deploys the SHIPPING sway-browser-vnc image
 # (Sway desktop + Chrome + wayvnc) on the Fedora base. The image bakes
 # binaries/services/cdp/vnc/wl/dbus + mcp (chrome-devtools-mcp layer); the
