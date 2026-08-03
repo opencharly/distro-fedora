@@ -9,33 +9,31 @@ tutorial-shell:
             systemd form and a custom `exec:` supervisord form, so the same candy runs under
             either init); `supervisord` is the container init that actually runs the service.
             Kept deliberately small: every line of this box is quoted on the documentation
-            site, so it must stay readable end to end. The box's own plan asserts the
-            CROSS-CANDY invariant the composed candies cannot assert individually — that the
-            tool layer and the service layer landed in ONE image together.
+            site, so it must stay readable end to end. The box's own plan asserts exactly one
+            thing — the WIRING composition produces, namely that the service candy became a
+            supervisord program. Co-residence is already proven by the composed candies' own
+            plans running against this same image, so the box does not restate it.
         base: fedora
         candy:
             - '@github.com/opencharly/charly/candy/supervisord:v2026.201.0706'
             - '@github.com/opencharly/charly/candy/ripgrep:v2026.201.0706'
             - '@github.com/opencharly/charly/candy/sshd:v2026.201.0706'
         plan:
-            # Cross-candy invariant: composition put the TOOL candy and the SERVICE candy
-            # into the same image. Neither candy's own plan can assert this — ripgrep's
-            # checks pass in any image containing ripgrep, sshd's in any image containing
-            # sshd. Only the composing box can prove they arrived together, which is why
-            # this check lives here and not in either candy.
-            - check: composition landed both the tool candy and the service candy in one image — rg and sshd are on PATH together
-              id: tutorial-shell-composition
-              exit_status: 0
-              stdout:
-                - contains: /usr/bin/rg
-                - contains: sshd
-              command: command -v rg && command -v sshd
-            # The composed tool actually works on this base — a real search returning a real
-            # match, not merely a binary that exists. Mirrors the ripgrep candy's own probe
-            # style so the two read alike on the generated reference pages.
-            - check: the composed ripgrep candy really searches on the fedora base — a present pattern returns its line
-              id: tutorial-shell-search-works
-              exit_status: 0
-              stdout:
-                - contains: needle-in-haystack
-              command: printf 'needle-in-haystack\nother-line\n' | rg needle
+            # The box asserts ONE thing, and only what composition itself produces.
+            #
+            # Co-residence needs no check here: every composed candy's own plan runs against
+            # THIS image, so ripgrep's probes and sshd's probes both passing IS the proof that
+            # both landed. Re-asserting it at box level would duplicate them (R3).
+            #
+            # What no candy can assert alone is the WIRING between two of them. `supervisord`
+            # assembles /etc/supervisord.conf from per-candy fragments at image build, so a
+            # [program:sshd] block exists only because the SERVICE candy was composed next to
+            # the INIT candy. supervisord's own plan proves the init is installed; sshd's
+            # proves the daemon is installed; neither proves sshd became a supervisord program.
+            # Drop either candy from the list above and this check fails.
+            - check: composing the service candy next to the init candy wired sshd into the assembled supervisord config — a program block neither candy produces on its own
+              id: tutorial-shell-service-wired-into-init
+              file:
+                file: /etc/supervisord.conf
+                contains:
+                    - contains: "[program:sshd]"
