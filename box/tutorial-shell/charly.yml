@@ -1,0 +1,39 @@
+tutorial-shell:
+    candy:
+        description: |-
+            The teaching box behind opencharly.ai's quickstart — a minimal, real dev shell
+            Composes three candies on the bare Fedora base, each chosen to demonstrate one
+            distinct idea a newcomer has to learn: `ripgrep` is a pure TOOL layer (packages
+            and probes, no service); `sshd` is a SERVICE layer, and the canonical
+            init-polymorphism example (one `service:` list carrying both a `use_packaged:`
+            systemd form and a custom `exec:` supervisord form, so the same candy runs under
+            either init); `supervisord` is the container init that actually runs the service.
+            Kept deliberately small: every line of this box is quoted on the documentation
+            site, so it must stay readable end to end. The box's own plan asserts exactly one
+            thing — the WIRING composition produces, namely that the service candy became a
+            supervisord program. Co-residence is already proven by the composed candies' own
+            plans running against this same image, so the box does not restate it.
+        base: fedora
+        candy:
+            - '@github.com/opencharly/charly/candy/supervisord:v2026.201.0706'
+            - '@github.com/opencharly/charly/candy/ripgrep:v2026.201.0706'
+            - '@github.com/opencharly/charly/candy/sshd:v2026.201.0706'
+        plan:
+            # The box asserts ONE thing, and only what composition itself produces.
+            #
+            # Co-residence needs no check here: every composed candy's own plan runs against
+            # THIS image, so ripgrep's probes and sshd's probes both passing IS the proof that
+            # both landed. Re-asserting it at box level would duplicate them (R3).
+            #
+            # What no candy can assert alone is the WIRING between two of them. `supervisord`
+            # assembles /etc/supervisord.conf from per-candy fragments at image build, so a
+            # [program:sshd] block exists only because the SERVICE candy was composed next to
+            # the INIT candy. supervisord's own plan proves the init is installed; sshd's
+            # proves the daemon is installed; neither proves sshd became a supervisord program.
+            # Drop either candy from the list above and this check fails.
+            - check: composing the service candy next to the init candy wired sshd into the assembled supervisord config — a program block neither candy produces on its own
+              id: tutorial-shell-service-wired-into-init
+              file:
+                file: /etc/supervisord.conf
+                contains:
+                    - contains: "[program:sshd]"
