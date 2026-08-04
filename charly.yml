@@ -470,7 +470,11 @@ check-cross-pod-cdp:
                   cdp:
                     method: text
                     tab: "1"
-                  eventually: 30s
+                  # 90s, not 30s: on the concurrent 32-bed roster one wedged CDP call cycle
+                  # measured 37.8s, so a 30s budget could not fit a single complete attempt and
+                  # the retry_interval below bought nothing — the step failed on the clock rather
+                  # than on the page. 90s leaves room for two full slow cycles plus retries.
+                  eventually: 90s
                   retry_interval: 3s
                   stdout:
                     - contains: charly-fixture-web-content-marker
