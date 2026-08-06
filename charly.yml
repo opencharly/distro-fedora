@@ -455,14 +455,14 @@ check-fedora-vm:
 # CDP-probes a separate web-server SUBJECT pod (sibling member) over the shared
 # `charly` network. Proves venue-from-position + ${HOST:<subject>} end-to-end —
 # the canonical "a different kind of deployment tests another" case. Both members
-# are siblings under a GROUP bundle, brought up by foldMembers' shared deploy+check
+# are siblings under a GROUP, brought up by foldMembers' shared deploy+check
 # lifecycle (R3); the driver is an instrument, never check-live'd itself.
 check-cross-pod-cdp:
     group:
         disposable: true
         lifecycle: dev
         description: >-
-            Sole proof of pod->pod cross-deployment CDP probing — a Chrome DRIVER pod (sibling member) CDP-renders a separate web SUBJECT pod (sibling member) over the shared charly net via venue-from-position + ${HOST:web}. A group bundle with web + chrome sibling members; http-checks the subject marker on the web member, then cdp open / cdp text steps under the chrome member (venue=chrome) navigate to ${HOST:web}:8080 and assert the rendered fixture marker.
+            Sole proof of pod->pod cross-deployment CDP probing — a Chrome DRIVER pod (sibling member) CDP-renders a separate web SUBJECT pod (sibling member) over the shared charly net via venue-from-position + ${HOST:web}. A group with web + chrome sibling members; http-checks the subject marker on the web member, then cdp open / cdp text steps under the chrome member (venue=chrome) navigate to ${HOST:web}:8080 and assert the rendered fixture marker.
     web:
         pod:
             image: web
@@ -712,7 +712,7 @@ check-cross-vm-http:
         disposable: true
         lifecycle: dev
         description: >-
-            Sole proof of cross-KIND local->VM cross-deployment probing — a host local DRIVER member reaches a web SUBJECT inside a VM member via ${HOST:web-vm:80}'s ssh -L forward (resolveCheckEndpoint VM branch), zero VM-specific check code. A group bundle with a web-vm subject member (disposable Fedora Cloud libvirt VM running cloud-init nginx on guest :80) + a host-driver-vm local driver member; a curl command step under host-driver-vm (venue=host-driver-vm) against ${HOST:web-vm:80} (ssh -L tunnel over the managed charly-web-vm alias) asserts the vm fixture marker.
+            Sole proof of cross-KIND local->VM cross-deployment probing — a host local DRIVER member reaches a web SUBJECT inside a VM member via ${HOST:web-vm:80}'s ssh -L forward (resolveCheckEndpoint VM branch), zero VM-specific check code. A group with a web-vm subject member (disposable Fedora Cloud libvirt VM running cloud-init nginx on guest :80) + a host-driver-vm local driver member; a curl command step under host-driver-vm (venue=host-driver-vm) against ${HOST:web-vm:80} (ssh -L tunnel over the managed charly-web-vm alias) asserts the vm fixture marker.
     web-vm:
         vm:
             from: web-vm
@@ -731,14 +731,14 @@ check-cross-vm-http:
                   command: "curl -fsS http://${HOST:web-vm:80}/"
 # Cross-deployment across kinds (local→pod): a LOCAL (host) DRIVER member curls a
 # web-server SUBJECT pod member via its published port. Exercises a NON-pod member
-# bring-up (`charly bundle add` the local driver) + venue-from-position dispatch +
+# bring-up (`charly fleet add` the local driver) + venue-from-position dispatch +
 # ${HOST:web-local:8080} (host-vantage addressing of a pod subject).
 check-cross-local-http:
     group:
         disposable: true
         lifecycle: dev
         description: >-
-            Sole proof of cross-KIND local->pod cross-deployment probing — a non-pod local DRIVER member reaches a web SUBJECT pod member via its published port (resolveCheckEndpoint pod branch), the pod-subject twin of check-cross-vm-http. A group bundle with a web-local subject member (nginx :8080) + a kind:local host-driver member; http-checks the subject marker on web-local directly, then a curl command step under host-driver (venue=host-driver) against ${HOST:web-local:8080} asserts the fixture marker.
+            Sole proof of cross-KIND local->pod cross-deployment probing — a non-pod local DRIVER member reaches a web SUBJECT pod member via its published port (resolveCheckEndpoint pod branch), the pod-subject twin of check-cross-vm-http. A group with a web-local subject member (nginx :8080) + a kind:local host-driver member; http-checks the subject marker on web-local directly, then a curl command step under host-driver (venue=host-driver) against ${HOST:web-local:8080} asserts the fixture marker.
     web-local:
         pod:
             image: web
