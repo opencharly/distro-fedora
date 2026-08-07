@@ -3,7 +3,7 @@
 This submodule is **self-contained**: it OWNS the full Fedora base/builder stack
 locally (`fedora` → `fedora-nonfree` → `fedora-builder`), the Fedora **GPU base
 family** (`nvidia` / `python-ml`), the consumer showcase images (`fedora-coder` /
-`charly-fedora` / `fedora-test`), the `sway-browser-vnc` desktop, and the ~29
+`charly-fedora` / `fedora-test`), the `sway-browser-vnc` desktop, and the
 relocated Fedora-rooted app/fixture boxes (jupyter, jupyter-ml, comfyui, ollama,
 unsloth-studio, immich, immich-ml, openwebui, hermes, web, check-pod, redis,
 tier1/tier23, …) — all discovered under `box/`. It vendors **no candies**: every

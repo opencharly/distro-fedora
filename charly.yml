@@ -47,7 +47,7 @@ check-fedora-coder-pod:
         image: fedora-coder
         disposable: true
         lifecycle: dev
-        description: Sole proof of the full Fedora developer image (~32 candies — sshd + charly-mcp + 5 AI CLIs + language runtimes + DevOps tooling) building and running as one composed pod on the RPM Fusion base, the largest candy stack of any pod bed. Builds the fedora-coder image on fedora-nonfree (pixi/uv/npm/cargo->fedora-builder multistage), deploys it, and runs the composed candies' file/package/service/command/addr probes plus charly-mcp's mcp ping/list-tools/call.
+        description: Sole proof of the full Fedora developer image (sshd + charly-mcp + AI CLIs + language runtimes + DevOps tooling) building and running as one composed pod on the RPM Fusion base, the largest candy stack of any pod bed. Builds the fedora-coder image on fedora-nonfree (pixi/uv/npm/cargo->fedora-builder multistage), deploys it, and runs the composed candies' file/package/service/command/addr probes plus charly-mcp's mcp ping/list-tools/call.
 check-charly-fedora-pod:
     pod:
         image: charly-fedora

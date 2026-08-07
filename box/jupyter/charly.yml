@@ -7,6 +7,6 @@ jupyter:
             - '@github.com/opencharly/charly/candy/notebook-templates:v2026.201.0706'
             - '@github.com/opencharly/charly/candy/dbus:v2026.201.0706'
         # No box-level check: the .ipynb-templates-provisioned probe lives on
-        # candy/notebook-templates (notebook-templates-present, covering all 5 boxes
+        # candy/notebook-templates (notebook-templates-present, covering all the boxes
         # composing it), and the jupyter_mcp extension is covered by candy/jupyter-mcp
         # (jupyter-mcp-config-enabled) + candy/jupyter's deploy-scope mcp-* probes.
