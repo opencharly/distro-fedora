@@ -397,8 +397,10 @@ check-jupyter-ml-pod:
 # assertion is anchored on the MECHANISM: the deploy stages its own host binary
 # under /tmp for its own use, so only a /usr/bin/charly-anchored probe can tell
 # a real candy install from the deploy's scaffolding. The witness FAILS if the
-# binary didn't land at that path, if the welded command plugins don't dispatch
-# project-less, or if the tailscale package didn't reach the guest.
+# binary didn't land at that path or if the welded command plugins don't
+# dispatch project-less. (No tailscale assertion: the charly candy scopes
+# tailscale to the deb-family — on fedora it came from the removed native
+# package's deps, so the post-cutover deploy does not install it.)
 check-fedora-vm:
     vm:
         from: fedora-vm
@@ -439,15 +441,6 @@ check-fedora-vm:
                 cd /tmp &&
                 /usr/bin/charly doctor 2>/dev/null | grep -q 'Summary:' &&
                 echo WELDED-CMD-PROJECT-LESS-OK
-            - check: command=rpm -q tailscale >/dev/null 2>&1 && echo TAILSCALE-PKG-OK
-              id: tailscale-package-installed
-              description: the tailscale PACKAGE reached the guest — tailscale is not in the charly binary, so the charly candy's package section delivering it from the Fedora repos is a distinct mechanism from the binary copy and needs its own assertion.
-              stdout:
-                - contains: TAILSCALE-PKG-OK
-              exit_status: 0
-              context:
-                - runtime
-              command: rpm -q tailscale >/dev/null 2>&1 && echo TAILSCALE-PKG-OK
             - check: the libvirt verb dispatches through the out-of-process candy/plugin-vm and lists the host libvirt domains backing this disposable VM deployment
               id: libvirt-verb-dispatches
               libvirt: list
