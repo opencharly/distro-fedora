@@ -72,23 +72,7 @@ check-tutorial-shell:
         disposable: true
         lifecycle: dev
         description: >-
-            Sole proof of the DOCUMENTED teaching example — the tutorial-shell box that
-            opencharly.ai quotes verbatim in its quickstart and concepts curriculum. Builds the
-            two-candy box (ripgrep + sshd) on the bare Fedora base, deploys it as a pod, brings it
-            to steady state, and does it again after a fresh rebuild. The box composes NO init:
-            sshd declares a service:, so charly resolves the init the target needs and injects it
-            — supervisord for this container image, nothing extra for a machine venue. The
-            acceptance content is the composed candies' own runtime probes — sshd's service and
-            published-port checks — PLUS the injected init's own probes, among them supervisord's
-            control-socket check, which is the proof that an injected candy still contributes its
-            acceptance plan and not merely its binary. The box's image-scope check asserts the
-            wiring itself: [program:sshd] in the assembled supervisord config, a block neither
-            composed candy produces on its own. Carries no plan: of its own. A bed earns its own steps only for a
-            claim that needs a LIVE deployment AND that no composed candy already makes — the
-            local example is check-sway-browser-vnc-pod, which adds cdp/wl/record probes against a
-            running desktop. Every live claim here is already covered by the composed candies'
-            runtime probes, so a bed plan could only duplicate them (R3), and the duplicate would
-            pass for the wrong reason: testing the candy rather than this deployment.
+            Sole proof of the DOCUMENTED teaching example — the tutorial-shell box that opencharly.ai quotes verbatim in its quickstart and concepts curriculum. Builds the two-candy box (ripgrep + sshd) on the bare Fedora base, deploys it as a pod, brings it to steady state, and does it again after a fresh rebuild. The box composes NO init: sshd declares a service:, so charly resolves the init the target needs and injects it — supervisord for this container image, nothing extra for a machine venue. The acceptance content is the composed candies' own runtime probes — sshd's service and published-port checks — PLUS the injected init's own probes, among them supervisord's control-socket check, which is the proof that an injected candy still contributes its acceptance plan and not merely its binary. The box's image-scope check asserts the wiring itself: [program:sshd] in the assembled supervisord config, a block neither composed candy produces on its own. Carries no plan: of its own. A bed earns its own steps only for a claim that needs a LIVE deployment AND that no composed candy already makes — the local example is check-sway-browser-vnc-pod, which adds cdp/wl/record probes against a running desktop. Every live claim here is already covered by the composed candies' runtime probes, so a bed plan could only duplicate them (R3), and the duplicate would pass for the wrong reason: testing the candy rather than this deployment.
 # check-sway-browser-vnc-pod deploys the SHIPPING sway-browser-vnc image
 # (Sway desktop + Chrome + wayvnc) on the Fedora base. The image bakes
 # binaries/services/cdp/vnc/wl/dbus + mcp (chrome-devtools-mcp layer); the
@@ -142,7 +126,7 @@ check-pod:
               context:
                 - runtime
               command:
-                command: charly status --json
+                command: ${CHARLY_BIN} status --json
                 in_container: false
 # add_candy-on-pod overlay-deploy witness. Deploy-KEY (check-addcandy-pod) differs
 # from image-NAME (check-pod) — the precise condition under which the pod overlay
@@ -171,7 +155,7 @@ check-addcandy-pod:
         description: >-
             Sole proof of the add_candy-on-pod overlay-deploy path when deploy-key != image-name. A disposable pod bed whose deploy-key (check-addcandy-pod) differs from its image-name (check-pod) and which add_candy-overlays the pod-addcandy-marker layer (a /etc/pod-addcandy-marker file-write carrying POD-ADDCANDY-MARKER-OK AND a copy: of copied.dat to /etc/pod-addcandy-copied carrying POD-ADDCANDY-COPIED-OK). It asserts both files are present inside the RUNNING container — the write: leg proves the `<deploy-key>-overlay` image (which carries the add_candy layer) is the image `charly config`/`charly start` actually deployed (fails if the BASE check-pod image, without the markers, was deployed instead), and the copy: leg additionally proves the REMOTE add_candy candy's source tree was staged into the overlay build (`.build/_candy/<name>.<version>/`) so the per-candy scratch-stage COPY resolved. Reuses the already-built check-pod image so the bed stays light.
         add_candy:
-            - '@github.com/opencharly/charly/candy/pod-addcandy-marker:v2026.201.0706'
+            - '@github.com/opencharly/charly/candy/pod-addcandy-marker:v2026.227.0914'
         plan:
             - check: the pod-addcandy marker file is present inside the running container — proves the add_candy overlay actually deployed, not the base image
               id: addcandy-marker-deployed
@@ -215,8 +199,8 @@ check-stepkind-emit-pod:
         description: >-
             Sole proof of the F-STEP-EMIT BUILD leg — the pod-overlay OCITarget open external-step arm that bakes a class:step plugin's build-context Containerfile fragment. A disposable pod bed reusing the check-pod image that add_candy-overlays plugin-example-stepkind (the out-of-tree class:step plugin declaring StepContract emits=true + serving OpEmit) and stepkind-build-consumer (a candy with a BUILD-context run: plugin: examplestepkind step). At the overlay build charly lowers the run-step to an external step (external:examplestepkind), OCITarget.emitExternalStep consults the plugin's declared Emits=true, Invokes its OpEmit, and splices the returned Containerfile RUN — baking /etc/examplestepkind-build-baked (carrying STEPKIND-BUILD-BAKED-OK) into the overlay image. Asserts the file is present inside the RUNNING container, so it passes iff the OpEmit fragment baked through the external-step arm and the overlay (not the base check-pod image) deployed.
         add_candy:
-            - '@github.com/opencharly/charly/candy/plugin-example-stepkind:v2026.201.0706'
-            - '@github.com/opencharly/charly/candy/stepkind-build-consumer:v2026.201.0706'
+            - '@github.com/opencharly/charly/candy/plugin-example-stepkind:v2026.227.0914'
+            - '@github.com/opencharly/charly/candy/stepkind-build-consumer:v2026.227.0914'
         plan:
             - check: the external-step OpEmit fragment baked — /etc/examplestepkind-build-baked is present inside the running container carrying STEPKIND-BUILD-BAKED-OK, proving the OCITarget external-step build-emit arm spliced the plugin's OpEmit fragment into the overlay image
               id: stepkind-emit-baked-deployed
@@ -256,7 +240,7 @@ check-enc-pod:
               context:
                 - runtime
               command:
-                command: charly config status check-enc-pod
+                command: ${CHARLY_BIN} config status check-enc-pod
                 in_container: false
               stdout:
                 - matches: "enc-data\\s+yes\\s+yes"
@@ -309,7 +293,7 @@ check-enc-port-pod:
               context:
                 - runtime
               command:
-                command: charly config status check-enc-port-pod
+                command: ${CHARLY_BIN} config status check-enc-port-pod
                 in_container: false
               stdout:
                 - matches: "enc-port-data\\s+yes\\s+yes"
@@ -408,7 +392,7 @@ check-fedora-vm:
         lifecycle: dev
         description: Sole proof the charly toolchain installs on a Fedora Cloud 43 guest — the charly candy's copy step lands the binary at /usr/bin/charly and the composed virtualization/gocryptfs/socat layers install their deps. Disposable Fedora Cloud 43 libvirt VM, overlays the add_candy charly layer, then asserts charly binary + version (CHARLY-BINARY-OK) and the welded command plugins dispatching project-less (WELDED-CMD-PROJECT-LESS-OK).
         add_candy:
-            - '@github.com/opencharly/charly/candy/charly:v2026.226.1719'
+            - '@github.com/opencharly/charly/candy/charly:v2026.227.0914'
         install_opts:
             allow_repo_changes: true
             allow_root_tasks: true
@@ -538,7 +522,7 @@ check-preempt-arbiter-pod:
               eventually: 30s
               retry_interval: 3s
               command:
-                command: "charly preempt status"
+                command: "${CHARLY_BIN} preempt status"
                 in_container: false
               stdout:
                 - contains: check-preempt-arbiter-pod
@@ -548,7 +532,7 @@ check-preempt-arbiter-pod:
               context:
                 - runtime
               command:
-                command: "charly vm gpu plan vfio"
+                command: "${CHARLY_BIN} vm gpu plan vfio"
                 in_container: false
               stdout:
                 - contains: vfio-pci
@@ -605,7 +589,7 @@ check-preempt-live-pod:
                   eventually: 30s
                   retry_interval: 3s
                   command:
-                    command: "charly preempt status"
+                    command: "${CHARLY_BIN} preempt status"
                     in_container: false
                   stdout:
                     - contains: preempt-taker
@@ -617,7 +601,7 @@ check-preempt-live-pod:
                   eventually: 30s
                   retry_interval: 3s
                   command:
-                    command: "charly preempt status"
+                    command: "${CHARLY_BIN} preempt status"
                     in_container: false
                   stdout:
                     - contains: preempt-holder
@@ -683,7 +667,7 @@ check-preempt-vm-live:
                   eventually: 60s
                   retry_interval: 3s
                   command:
-                    command: "charly preempt status"
+                    command: "${CHARLY_BIN} preempt status"
                     in_container: false
                   stdout:
                     - contains: preempt-vm-taker
@@ -695,7 +679,7 @@ check-preempt-vm-live:
                   eventually: 60s
                   retry_interval: 3s
                   command:
-                    command: "charly preempt status"
+                    command: "${CHARLY_BIN} preempt status"
                     in_container: false
                   stdout:
                     - contains: preempt-vm-holder
@@ -856,7 +840,7 @@ check-cross-local-driver:
             Host venue for a cross-deployment local DRIVER member
             Minimal kind:local template establishing a host venue a sibling check drives by tree position.
         candy:
-            - '@github.com/opencharly/charly/candy/check-cross-local-driver-layer:v2026.201.0706'
+            - '@github.com/opencharly/charly/candy/check-cross-local-driver-layer:v2026.227.0914'
 discover:
     - path: box
       recursive: true
