@@ -36,8 +36,10 @@ defaults:
 # No namespace import: the fedora base stack is local; candies resolve via @github refs.
 import: []
 # Disposable R10 beds (kind: check, target: pod) — one per fedora consumer
-# image. Ports remapped into the 4xxxx range so a bed run never collides
-# with a production deploy of the same image. `charly check run <bed>` is the
+# image. No bed pins a host port: every inherited container port auto-allocates
+# a free 127.0.0.1 host port, so concurrent bed runs cannot collide with each
+# other or with a production deploy of the same image, and a plan step reaches
+# the port through ${HOST_PORT:N}. `charly check run <bed>` is the
 # canonical R10 gate: build → check-image → deploy → check-live → fresh
 # update → teardown, all on isolated charly-<bed>-* volumes
 # (deployVolumePrefix). `disposable: true` is the sole authorization for
@@ -374,51 +376,22 @@ check-jupyter-ml-pod:
         disposable: true
         lifecycle: dev
         description: Sole proof of the GPU-rooted JupyterLab ML image (spaCy + jupyterlab-quarto + llama.cpp + vLLM + CRDT MCP) building on the Fedora nvidia/CUDA base — the heaviest fedora build. Builds the jupyter-ml pod on the nvidia base (nvidia+cuda candies), deploys it (ordinary pod, no passthrough), and runs spaCy/quarto/llama-cli/vllm build-scope probes plus supervisord service, http /api, and mcp ping/list-tools/call.
-# check-ollama-pod — the R10 bed for the ollama CANDY (candy/ollama) AND the
-# compiled-in command:ollama plugin (candy/plugin-ollama). The pod deploy runs the
-# candy's inherited baked checks (binary/file probes, /api/tags 200, ollama
-# --version, ollama list); the bed's own steps prove the PLUGIN end-to-end from
-# the host: `charly ollama` dispatch plus live API round-trips (version, list)
-# against the auto-allocated host port. The heavy pull/persist proof stays with
-# the candy's agent-check (graded by `charly check feature run`), keeping the
-# deterministic bed light. GPU via CDI when present, CPU fallback otherwise.
+# check-ollama-pod — the R10 bed for the ollama CANDY (candy/ollama), the CUDA
+# backend add-on (candy/ollama-cuda) and the compiled-in command:ollama plugin
+# (candy/plugin-ollama). The bed declares NO plan of its own: every step it needs
+# is baked into the candies it composes — the server probes (binary/file, /api/tags
+# 200, ollama --version, ollama list), the three host-side `charly ollama` steps
+# that prove plugin dispatch and live API round-trips, and the CUDA backend probe.
+# Authoring them on the candies rather than here is what lets the CachyOS sibling
+# bed prove the same surface without repeating a line (R3). The heavy pull/persist
+# proof stays with the candy's agent-check (graded by `charly check feature run`),
+# keeping the deterministic bed light.
 check-ollama-pod:
     pod:
         image: ollama
         disposable: true
         lifecycle: dev
-        description: Sole proof the Fedora GPU ollama LLM-server image composes and serves on the NVIDIA base AND of the compiled-in command:ollama plugin (candy/plugin-ollama) end-to-end. Builds and deploys the ollama pod and runs the inherited ollama + dbus baked checks (binary/file probes, /api/tags 200, ollama --version, ollama list) PLUS the bed's host-side charly ollama steps against the live server — help dispatch, version, and list over the auto-allocated host port.
-        plan:
-            - check: command=charly ollama help exits 0 and prints the plugin usage (proving the compiled-in command:ollama plugin registers and dispatches)
-              id: ollama-cli-help
-              exit_status: 0
-              stdout:
-                - contains: 'manage a deployed Ollama server'
-              context:
-                - runtime
-              command:
-                command: ${CHARLY_BIN} ollama help
-                in_container: false
-            - check: command=charly ollama version --server http://127.0.0.1:${HOST_PORT:11434} exits 0 and prints the server version (proving a live API round-trip against the deployed server)
-              id: ollama-cli-version
-              exit_status: 0
-              stdout:
-                - contains: 'ollama server version is'
-              context:
-                - runtime
-              command:
-                command: ${CHARLY_BIN} ollama version --server http://127.0.0.1:${HOST_PORT:11434}
-                in_container: false
-            - check: command=charly ollama list --server http://127.0.0.1:${HOST_PORT:11434} exits 0 and prints the model table header (proving the list API path against the deployed server)
-              id: ollama-cli-list
-              exit_status: 0
-              stdout:
-                - contains: 'NAME'
-              context:
-                - runtime
-              command:
-                command: ${CHARLY_BIN} ollama list --server http://127.0.0.1:${HOST_PORT:11434}
-                in_container: false
+        description: Sole proof the Fedora GPU ollama LLM-server image composes and serves on the NVIDIA base, that the CUDA backend is present, and that the compiled-in command:ollama plugin (candy/plugin-ollama) works end-to-end. Builds and deploys the ollama pod and runs the checks baked into the ollama, ollama-cuda and dbus candies — binary/file probes, /api/tags 200, ollama --version, ollama list, the CUDA backend library, and the host-side charly ollama help/version/list steps against the live server over the auto-allocated host port.
 # charly binary install witness on a disposable Fedora Cloud VM. The charly
 # candy's copy step lands the in-development binary at /usr/bin/charly (the
 # localpkg package install is removed by the remove-candy-localpkg cutover) and
