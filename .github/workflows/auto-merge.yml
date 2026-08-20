@@ -103,7 +103,7 @@ jobs:
 
           # ---- Verify every check concluded green (success/skipped/neutral) ----
           verify_all_green() {
-            local head=$1 name conclusion state all_green=true failed=""
+            local head=$1 name conclusion state nstatuses all_green=true failed=""
             while IFS=$'\t' read -r name conclusion; do
               case "$conclusion" in
                 success|skipped|neutral) ;;
@@ -112,10 +112,14 @@ jobs:
             done < <(gh api "/repos/$REPO/commits/$head/check-runs" \
               --jq '.check_runs[] | [.name, (.conclusion // "null")] | @tsv')
             state=$(gh api "/repos/$REPO/commits/$head/status" --jq '.state')
-            # The combined commit-status state can be success, failure, error or
-            # pending. wait_all_settled() already drained pending; anything that
-            # is not success (failure OR error) is not green.
-            if [ "$state" != "success" ]; then
+            nstatuses=$(gh api "/repos/$REPO/commits/$head/status" --jq '.statuses | length')
+            # The combined commit-status state is "pending" by default when a
+            # commit has NO commit statuses (GitHub's documented empty-default).
+            # The validator posts a check-run, never a commit status, so a green
+            # head reads state=pending, statuses=[]. Only a non-empty statuses
+            # array whose combined state is not success (failure OR error, or a
+            # pending that wait_all_settled() failed to drain) is not green.
+            if [ "$nstatuses" -gt 0 ] && [ "$state" != "success" ]; then
               all_green=false
               failed="${failed} commit-status contexts (state=${state});"
             fi
