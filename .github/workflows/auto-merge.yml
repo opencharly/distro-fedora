@@ -231,6 +231,27 @@ jobs:
                          && out=$(git push -q origin "HEAD:$head_branch" 2>&1); then
                         HEAD=$(git rev-parse HEAD)
                         STAMP="$stamp"
+                        # The finalization renames the PR's CHANGELOG file, so
+                        # the diff the re-run validator will review differs from
+                        # the one the author's body described. A fresh re-review
+                        # compares the body against the CURRENT diff; a body that
+                        # still names the placeholder reads as a description↔code
+                        # mismatch and the re-validation blocks (observed live:
+                        # the first finalized head was BLOCKed on the old filename
+                        # in the body). Reconcile the body BEFORE the re-run by
+                        # appending an auto-finalization note naming the actual
+                        # (finalized) file. Idempotent: the marker prevents
+                        # re-appending across re-runs. Failure is non-fatal — if
+                        # the author's body pinned the placeholder, the re-run
+                        # validator blocks and the run fails loudly, leaving the
+                        # PR open.
+                        if ! gh pr view "$PR" --repo "$REPO" --json body --jq .body 2>/dev/null \
+                             | grep -q '## Auto-merge finalization'; then
+                          gh pr view "$PR" --repo "$REPO" --json body --jq .body 2>/dev/null \
+                            | { cat; printf '\n\n## Auto-merge finalization\n\nThis run finalized the CHANGELOG at merge time: the placeholder was\nrenamed to `CHANGELOG/%s.md` (H1 rewritten to `# %s`). The current diff\ncarries the finalized file.\n' "$stamp" "$stamp"; } \
+                            | gh pr edit "$PR" --repo "$REPO" --body-file - \
+                            || echo "  PR body finalization-note update failed — continuing (the re-validation is the gate)"
+                        fi
                         echo "CHANGELOG finalized; new head $HEAD — waiting for re-validation"
                         wait_for_validator "$HEAD" || exit 1
                         wait_all_settled "$HEAD" "revalidation" || exit 1
