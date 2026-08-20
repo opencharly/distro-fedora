@@ -48,13 +48,24 @@ jobs:
 
           # ---- Idempotent tag creation (shared by the already-closed and
           #      post-merge paths so the two cannot drift) ----
+          # Existence is checked against the LOCAL git refs (the checkout
+          # fetches +refs/tags/*:refs/tags/*) — NOT via `gh api …git/refs/tags`,
+          # whose 404 response body is written to stdout and therefore always
+          # reads as non-empty, making the guard believe every tag exists and
+          # silently skip the mint (observed live: PR #27 merged, never tagged).
           ensure_tag() {
             local ver="$1" ms="$2"
-            if [ -z "$(gh api "/repos/$REPO/git/refs/tags/$ver" -q '.ref' 2>/dev/null || true)" ]; then
-              gh api -X POST "/repos/$REPO/git/refs" \
-                -f ref="refs/tags/$ver" -f sha="$ms" >/dev/null && echo "Tagged $ver"
-            else
+            if git rev-parse -q --verify "refs/tags/$ver" >/dev/null 2>&1; then
               echo "Tag $ver already exists"
+              return 0
+            fi
+            if gh api -X POST "/repos/$REPO/git/refs" \
+              -f ref="refs/tags/$ver" -f sha="$ms" >/dev/null 2>&1; then
+              echo "Tagged $ver"
+            else
+              # A concurrent run may have minted it between the check and the
+              # POST (422 "Reference already exists") — the tag is then present.
+              echo "Tag $ver already exists (concurrent mint)"
             fi
           }
 
