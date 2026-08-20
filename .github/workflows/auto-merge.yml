@@ -70,7 +70,7 @@ jobs:
           # ---- Already merged/closed: tag idempotently and stop ----
           STATE=$(gh api "/repos/$REPO/pulls/$PR" --jq '.state')
           if [ "$STATE" = "closed" ]; then
-            MS=$(gh api "/repos/$REPO/pulls/$PR" --jq '.merge_commit.sha // empty')
+            MS=$(gh api "/repos/$REPO/pulls/$PR" --jq '.merge_commit_sha // empty')
             if [ -n "$MS" ]; then
               VER="v$(date -u -d "$(gh api "/repos/$REPO/commits/$MS" \
                 --jq '.commit.committer.date')" +%Y.%j.%H%M)"
@@ -265,7 +265,7 @@ jobs:
           for i in $(seq 1 120); do
             sleep 5
             STATE=$(gh api "/repos/$REPO/pulls/$PR" --jq '.state')
-            MS=$(gh api "/repos/$REPO/pulls/$PR" --jq '.merge_commit.sha // empty')
+            MS=$(gh api "/repos/$REPO/pulls/$PR" --jq '.merge_commit_sha // empty')
             if [ "$STATE" = "closed" ] && [ -n "$MS" ]; then
               if [ -z "$STAMP" ]; then
                 STAMP=$(date -u -d "$(gh api "/repos/$REPO/commits/$MS" \
