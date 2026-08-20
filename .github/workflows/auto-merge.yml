@@ -195,10 +195,18 @@ jobs:
           # new run queues behind the active one (same head-branch group) and
           # only starts after the PR is merged/closed.
           #
-          # Finalization is idempotent: if the head branch's history already
-          # contains a finalization commit (a previous auto-merge run on this
-          # PR), the changelog is already at a merge stamp — skip the rename and
-          # reuse that stamp for the tag so the two still agree.
+          # Finalization is idempotent: a previous auto-merge run on this PR has
+          # already renamed+stamped the changelog, so skip the rename and reuse
+          # that stamp for the tag so the two still agree. The state check is
+          # DIRECT — it reads the head's copy of the file and looks for the
+          # `auto-merge-finalized` marker the finalize writes (below). It does
+          # NOT walk branch history: the earlier `git log | grep` history-text
+          # proxy NEVER evaluated true in the GitHub runner across six live runs
+          # (observed live: PR #24 re-finalized 1553→1627 despite the finalize
+          # commit being in the branch history, re-creating the re-finalization
+          # loop defect #7), while `git diff`/`git show` blob reads and
+          # `gh | grep` pipelines work. A blob read tests the actual invariant
+          # (the file is already finalized) instead of an indirect proxy.
           head_repo=$(gh api "/repos/$REPO/pulls/$PR" --jq '.head.repo.full_name')
           head_branch=$(gh api "/repos/$REPO/pulls/$PR" --jq '.head.ref')
           if [ "$head_repo" = "$REPO" ]; then
@@ -208,7 +216,8 @@ jobs:
                 | awk '$1=="A"{print $NF}' \
                 | grep -E '^CHANGELOG/[0-9]{4}\.[0-9]{3}\.[0-9]{4}\.md$' | head -1 || true)
               if [ -n "$placeholder" ]; then
-                if git log --format=%s "origin/$head_branch" | grep -q '^docs: finalize CHANGELOG placeholder to'; then
+                if git show "origin/$head_branch:$placeholder" 2>/dev/null >/tmp/am-placeholder-check \
+                   && grep -q 'auto-merge-finalized' /tmp/am-placeholder-check; then
                   echo "CHANGELOG already finalized — skipping finalization"
                   STAMP=$(basename "$placeholder" .md)
                 else
@@ -220,7 +229,8 @@ jobs:
                     echo "Finalizing $placeholder -> CHANGELOG/$stamp.md"
                     if git checkout -q -B dev/auto-merge "origin/$head_branch" \
                        && git mv "$placeholder" "CHANGELOG/$stamp.md" \
-                       && sed -i "1s/^# [0-9]\{4\}\.[0-9]\{3\}\.[0-9]\{4\}/# $stamp/" "CHANGELOG/$stamp.md" \
+                       && sed -i -e "1s/^# [0-9]\{4\}\.[0-9]\{3\}\.[0-9]\{4\}/# $stamp/" \
+                                 -e "1a\\<!-- auto-merge-finalized: $stamp -->" "CHANGELOG/$stamp.md" \
                        && git add "CHANGELOG/$stamp.md"; then
                       # `git add <new>` stages the whole rename (deletion of the
                       # placeholder + the sed edit); committing with a pathspec
@@ -241,14 +251,22 @@ jobs:
                         # in the body). Reconcile the body BEFORE the re-run by
                         # appending an auto-finalization note naming the actual
                         # (finalized) file. Idempotent: the marker prevents
-                        # re-appending across re-runs. Failure is non-fatal — if
-                        # the author's body pinned the placeholder, the re-run
-                        # validator blocks and the run fails loudly, leaving the
-                        # PR open.
+                        # re-appending across re-runs. The marker is an HTML
+                        # comment unique to this note — the earlier guard matched
+                        # the `## Auto-merge finalization` HEADING, which a PR
+                        # body describing the workflow can legitimately name in
+                        # prose, so the append was silently skipped and the
+                        # re-run validator blocked on the body↔diff mismatch
+                        # (observed live: the canary body-append PR, whose body
+                        # step 3 names the note, never received the append).
+                        # Author prose cannot contain `<!-- auto-merge-finalization-note`.
+                        # Failure is non-fatal — if the author's body pinned the
+                        # placeholder, the re-run validator blocks and the run
+                        # fails loudly, leaving the PR open.
                         if ! gh pr view "$PR" --repo "$REPO" --json body --jq .body 2>/dev/null \
-                             | grep -q '## Auto-merge finalization'; then
+                             | grep -q '<!-- auto-merge-finalization-note'; then
                           gh pr view "$PR" --repo "$REPO" --json body --jq .body 2>/dev/null \
-                            | { cat; printf '\n\n## Auto-merge finalization\n\nThis run finalized the CHANGELOG at merge time: the placeholder was\nrenamed to `CHANGELOG/%s.md` (H1 rewritten to `# %s`). The current diff\ncarries the finalized file.\n' "$stamp" "$stamp"; } \
+                            | { cat; printf '\n\n## Auto-merge finalization\n\nThis run finalized the CHANGELOG at merge time: the placeholder was\nrenamed to `CHANGELOG/%s.md` (H1 rewritten to `# %s`). The current diff\ncarries the finalized file.\n\n<!-- auto-merge-finalization-note: %s -->\n' "$stamp" "$stamp" "$stamp"; } \
                             | gh pr edit "$PR" --repo "$REPO" --body-file - \
                             || echo "  PR body finalization-note update failed — continuing (the re-validation is the gate)"
                         fi
