@@ -8,6 +8,7 @@ on:
 permissions:
   pull-requests: write
   contents: write
+  actions: write
 
 # The CHANGELOG-finalization step pushes a commit to the PR head branch, which
 # re-runs the validator, which re-triggers this workflow. Without a concurrency
@@ -131,6 +132,52 @@ jobs:
             echo "All status checks green on $head"
           }
 
+          # ---- Wait for the validator to produce a check-run on a freshly
+          #      finalized head. The finalization push is made with GITHUB_TOKEN,
+          #      and GitHub does not dispatch jobs for events triggered by
+          #      GITHUB_TOKEN — the validator run it triggers ends
+          #      action_required with 0 jobs and no check-run. Re-run the
+          #      validator so its check-run is created, then wait for it. ----
+          wait_for_validator() {
+            local head="$1" i run_id conclusion
+            for i in $(seq 1 30); do
+              run_id=$(gh api "/repos/$REPO/actions/runs?head_sha=$head" \
+                --jq '[.workflow_runs[] | select(.name == "charly/pr-validator")] | .[0].id // empty')
+              if [ -n "$run_id" ]; then break; fi
+              echo "waiting for validator run on $head (attempt $i/30)"
+              sleep 5
+            done
+            if [ -z "$run_id" ]; then
+              echo "No validator run found on $head after finalization"
+              return 1
+            fi
+            # Wait for the run to settle (conclusion non-null), then re-run it
+            # if it ended action_required / startup_failure (no check-run).
+            for i in $(seq 1 30); do
+              conclusion=$(gh api "/repos/$REPO/actions/runs/$run_id" --jq '.conclusion // empty')
+              if [ -n "$conclusion" ]; then break; fi
+              echo "waiting for validator run $run_id to settle (attempt $i/30)"
+              sleep 5
+            done
+            if [ "$conclusion" = "action_required" ] || [ "$conclusion" = "startup_failure" ]; then
+              echo "Validator run $run_id ended $conclusion (GITHUB_TOKEN dispatch) — re-running"
+              gh api -X POST "/repos/$REPO/actions/runs/$run_id/rerun" >/dev/null
+            fi
+            # Wait for the validator check-run to appear on the new head
+            for i in $(seq 1 60); do
+              n=$(gh api "/repos/$REPO/commits/$head/check-runs" \
+                --jq '[.check_runs[] | select(.name == "charly/pr-validator")] | length')
+              if [ "$n" -gt 0 ]; then
+                echo "validator check-run present on $head"
+                return 0
+              fi
+              echo "waiting for validator check-run on $head (attempt $i/60)"
+              sleep 5
+            done
+            echo "Timed out waiting for validator check-run on $head"
+            return 1
+          }
+
           wait_all_settled "$HEAD" "initial" || exit 1
           verify_all_green "$HEAD" || exit 1
 
@@ -147,6 +194,11 @@ jobs:
           # re-triggers the validator, which re-triggers this workflow, but the
           # new run queues behind the active one (same head-branch group) and
           # only starts after the PR is merged/closed.
+          #
+          # Finalization is idempotent: if the head branch's history already
+          # contains a finalization commit (a previous auto-merge run on this
+          # PR), the changelog is already at a merge stamp — skip the rename and
+          # reuse that stamp for the tag so the two still agree.
           head_repo=$(gh api "/repos/$REPO/pulls/$PR" --jq '.head.repo.full_name')
           head_branch=$(gh api "/repos/$REPO/pulls/$PR" --jq '.head.ref')
           if [ "$head_repo" = "$REPO" ]; then
@@ -156,32 +208,39 @@ jobs:
                 | awk '$1=="A"{print $NF}' \
                 | grep -E '^CHANGELOG/[0-9]{4}\.[0-9]{3}\.[0-9]{4}\.md$' | head -1 || true)
               if [ -n "$placeholder" ]; then
-                stamp=$(date -u +%Y.%j.%H%M)
-                if [ "$(basename "$placeholder" .md)" = "$stamp" ]; then
-                  echo "CHANGELOG placeholder already at the merge stamp $stamp"
+                if git log --format=%s "origin/$head_branch" | grep -q '^docs: finalize CHANGELOG placeholder to'; then
+                  echo "CHANGELOG already finalized — skipping finalization"
+                  STAMP=$(basename "$placeholder" .md)
                 else
-                  echo "Finalizing $placeholder -> CHANGELOG/$stamp.md"
-                  if git checkout -q -B dev/auto-merge "origin/$head_branch" \
-                     && git mv "$placeholder" "CHANGELOG/$stamp.md" \
-                     && sed -i "1s/^# [0-9]\{4\}\.[0-9]\{3\}\.[0-9]\{4\}/# $stamp/" "CHANGELOG/$stamp.md" \
-                     && git add "CHANGELOG/$stamp.md"; then
-                    # `git add <new>` stages the whole rename (deletion of the
-                    # placeholder + the sed edit); committing with a pathspec
-                    # would drop the deletion side and leave the old file behind.
-                    if git -c user.name='opencharly auto-merge' \
-                       -c user.email='actions@github.com' \
-                       commit -q -m "docs: finalize CHANGELOG placeholder to $stamp (merge-time CalVer)" \
-                       && out=$(git push -q origin "HEAD:$head_branch" 2>&1); then
-                      HEAD=$(git rev-parse HEAD)
-                      STAMP="$stamp"
-                      echo "CHANGELOG finalized; new head $HEAD — waiting for re-validation"
-                      wait_all_settled "$HEAD" "revalidation" || exit 1
-                      verify_all_green "$HEAD" || exit 1
-                    else
-                      echo "CHANGELOG finalize push failed — falling back to a plain merge"
-                    fi
+                  stamp=$(date -u +%Y.%j.%H%M)
+                  if [ "$(basename "$placeholder" .md)" = "$stamp" ]; then
+                    echo "CHANGELOG placeholder already at the merge stamp $stamp"
+                    STAMP="$stamp"
                   else
-                    echo "CHANGELOG finalize edit failed — falling back to a plain merge"
+                    echo "Finalizing $placeholder -> CHANGELOG/$stamp.md"
+                    if git checkout -q -B dev/auto-merge "origin/$head_branch" \
+                       && git mv "$placeholder" "CHANGELOG/$stamp.md" \
+                       && sed -i "1s/^# [0-9]\{4\}\.[0-9]\{3\}\.[0-9]\{4\}/# $stamp/" "CHANGELOG/$stamp.md" \
+                       && git add "CHANGELOG/$stamp.md"; then
+                      # `git add <new>` stages the whole rename (deletion of the
+                      # placeholder + the sed edit); committing with a pathspec
+                      # would drop the deletion side and leave the old file behind.
+                      if git -c user.name='opencharly auto-merge' \
+                         -c user.email='actions@github.com' \
+                         commit -q -m "docs: finalize CHANGELOG placeholder to $stamp (merge-time CalVer)" \
+                         && out=$(git push -q origin "HEAD:$head_branch" 2>&1); then
+                        HEAD=$(git rev-parse HEAD)
+                        STAMP="$stamp"
+                        echo "CHANGELOG finalized; new head $HEAD — waiting for re-validation"
+                        wait_for_validator "$HEAD" || exit 1
+                        wait_all_settled "$HEAD" "revalidation" || exit 1
+                        verify_all_green "$HEAD" || exit 1
+                      else
+                        echo "CHANGELOG finalize push failed — falling back to a plain merge"
+                      fi
+                    else
+                      echo "CHANGELOG finalize edit failed — falling back to a plain merge"
+                    fi
                   fi
                 fi
               else
