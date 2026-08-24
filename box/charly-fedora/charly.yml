@@ -11,11 +11,7 @@ charly-fedora:
         candy:
             - '@github.com/opencharly/charly/candy/agent-forwarding:v2026.231.0714'
             - '@github.com/opencharly/layer-supervisord:v2026.235.2056'
-<<<<<<< HEAD
             - '@github.com/opencharly/charly/candy/charly:v2026.236.0956'
-=======
-            - '@github.com/opencharly/charly/candy/charly:v2026.231.0714'
->>>>>>> origin/main
             - '@github.com/opencharly/layer-golang:v2026.235.2057'
             - '@github.com/opencharly/charly/candy/gh:v2026.231.0714'
             - '@github.com/opencharly/charly/candy/sshd:v2026.231.0714'
