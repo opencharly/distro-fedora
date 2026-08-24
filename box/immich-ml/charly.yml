@@ -6,7 +6,11 @@ immich-ml:
         candy:
             - '@github.com/opencharly/charly/candy/agent-forwarding:v2026.231.0714'
             - '@github.com/opencharly/layer-nodejs:v2026.235.2056'
+<<<<<<< HEAD
             - '@github.com/opencharly/layer-cuda:v2026.235.2121'
+=======
+            - '@github.com/opencharly/layer-cuda:v2026.235.2110'
+>>>>>>> origin/main
             - '@github.com/opencharly/charly/candy/python-ml:v2026.231.0714'
             - '@github.com/opencharly/layer-supervisord:v2026.235.2056'
             - '@github.com/opencharly/charly/candy/postgresql:v2026.231.0714'
