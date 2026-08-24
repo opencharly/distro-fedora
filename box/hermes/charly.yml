@@ -4,7 +4,7 @@ hermes:
         candy:
             - '@github.com/opencharly/charly/candy/agent-forwarding:v2026.231.0714'
             - '@github.com/opencharly/charly/candy/hermes-full:v2026.231.0714'
-            - '@github.com/opencharly/charly/candy/dbus:v2026.231.0714'
+            - '@github.com/opencharly/pod-dbus:v2026.235.2115'
         # No box-level check: the claude/codex/gemini CLIs and the hermes binary +
         # service belong to their candies' check (claude-code/codex/gemini via
         # hermes-full, and hermes' own hermes-binary/hermes-service-running) — one

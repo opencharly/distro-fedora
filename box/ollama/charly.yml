@@ -10,4 +10,4 @@ ollama:
             # this box sits on the NVIDIA base, so it opts into the GPU backend while
             # a CPU consumer of the same candy pays nothing for it.
             - '@github.com/opencharly/charly/candy/ollama-cuda:v2026.231.0714'
-            - '@github.com/opencharly/charly/candy/dbus:v2026.231.0714'
+            - '@github.com/opencharly/pod-dbus:v2026.235.2115'
