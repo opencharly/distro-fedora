@@ -408,7 +408,7 @@ check-fedora-vm:
         from: fedora-vm
         disposable: true
         lifecycle: dev
-        description: Sole proof the charly toolchain installs on a Fedora Cloud 43 guest — the charly candy's copy step lands the binary at /usr/bin/charly and the composed virtualization/gocryptfs/socat layers install their deps. Disposable Fedora Cloud 43 libvirt VM, overlays the add_candy charly layer, then asserts charly binary + version (CHARLY-BINARY-OK) and the welded command plugins dispatching project-less (WELDED-CMD-PROJECT-LESS-OK).
+        description: Sole proof the charly toolchain installs on a Fedora Cloud 43 guest — the charly candy installs the binary from the published dnf repo (the distro-repo mechanism, charly#388) and binary at /usr/bin/charly and the composed virtualization/gocryptfs/socat layers install their deps. Disposable Fedora Cloud 43 libvirt VM, overlays the add_candy charly layer, then asserts charly binary + version (CHARLY-BINARY-OK) and the welded command plugins dispatching project-less (WELDED-CMD-PROJECT-LESS-OK).
         add_candy:
             - '@github.com/opencharly/charly/candy/charly:v2026.236.1354'
         install_opts:
