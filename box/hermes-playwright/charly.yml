@@ -5,4 +5,4 @@ hermes-playwright:
             - '@github.com/opencharly/charly/candy/agent-forwarding:v2026.231.0714'
             - '@github.com/opencharly/charly/candy/hermes:v2026.231.0714'
             - '@github.com/opencharly/charly/candy/hermes-playwright:v2026.231.0714'
-            - '@github.com/opencharly/charly/candy/dbus:v2026.231.0714'
+            - '@github.com/opencharly/pod-dbus:v2026.235.2115'
