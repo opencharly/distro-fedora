@@ -2,7 +2,7 @@ mcp:
     candy:
         base: fedora
         candy:
-            - '@github.com/opencharly/charly/candy/agent-forwarding:v2026.231.0714'
-            - '@github.com/opencharly/charly/candy/jupyter:v2026.231.0714'
-            - '@github.com/opencharly/charly/candy/notebook-templates:v2026.231.0714'
+            - '@github.com/opencharly/layer-agent-forwarding:v2026.237.804'
+            - '@github.com/opencharly/pod-jupyter:v2026.237.0806'
+            - '@github.com/opencharly/layer-notebook-templates:v2026.237.557'
             - '@github.com/opencharly/pod-dbus:v2026.235.2115'
