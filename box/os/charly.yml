@@ -3,4 +3,4 @@ os:
         base: fedora
         candy:
             - '@github.com/opencharly/layer-supervisord:v2026.235.2056'
-            - '@github.com/opencharly/charly/candy/os-layer:v2026.231.0714'
+            - '@github.com/opencharly/pod-os-layer:v2026.237.457'

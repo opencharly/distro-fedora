@@ -2,4 +2,4 @@ tier1:
     candy:
         base: fedora
         candy:
-            - '@github.com/opencharly/charly/candy/check-tier1-layer:v2026.231.0714'
+            - '@github.com/opencharly/layer-check-tier1-layer:v2026.237.456'

@@ -3,4 +3,4 @@ tier23:
         base: fedora
         candy:
             - '@github.com/opencharly/layer-supervisord:v2026.235.2056'
-            - '@github.com/opencharly/charly/candy/check-tier23-layer:v2026.231.0714'
+            - '@github.com/opencharly/pod-check-tier23-layer:v2026.237.456'
