@@ -3,5 +3,5 @@ valkey-test:
         base: fedora
         candy:
             - '@github.com/opencharly/layer-agent-forwarding:v2026.237.804'
-            - '@github.com/opencharly/layer-supervisord:v2026.235.2056'
+            - '@github.com/opencharly/layer-supervisord:v2026.239.1300'
             - '@github.com/opencharly/pod-valkey:v2026.237.458'

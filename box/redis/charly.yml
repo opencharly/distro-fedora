@@ -2,6 +2,6 @@ redis:
     candy:
         base: fedora
         candy:
-            - '@github.com/opencharly/layer-supervisord:v2026.235.2056'
+            - '@github.com/opencharly/layer-supervisord:v2026.239.1300'
             - '@github.com/opencharly/pod-redis:v2026.237.458'
             - '@github.com/opencharly/pod-check-redis-init-layer:v2026.237.805'
