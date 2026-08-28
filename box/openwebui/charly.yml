@@ -2,9 +2,9 @@ openwebui:
     candy:
         base: fedora
         candy:
-            - '@github.com/opencharly/layer-agent-forwarding:v2026.237.804'
-            - '@github.com/opencharly/pod-openwebui:v2026.237.937'
-            - '@github.com/opencharly/pod-dbus:v2026.235.2115'
+            - '@github.com/opencharly/layer-agent-forwarding:v2026.239.1607'
+            - '@github.com/opencharly/pod-openwebui:v2026.239.1557'
+            - '@github.com/opencharly/pod-dbus:v2026.239.1555'
         # No box-level check: the openwebui-entrypoint binary + the WEBUI_ADMIN_EMAIL
         # env probe live on candy/openwebui (openwebui-entrypoint +
         # openwebui-admin-email-set); the pixi python is proven by the candy's
