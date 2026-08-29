@@ -9,6 +9,7 @@ check-pod:
             - fedora:43
             - fedora
         candy:
+            - '@github.com/opencharly/layer-supervisord:v2026.240.0121'
             - '@github.com/opencharly/layer-check-base-layer:v2026.239.1620'
             - '@github.com/opencharly/charly/candy/check-stack-layer:v2026.240.0831'
             # The DUAL-PLACEMENT plugin candy: its baked `externalprobe` check rides in,

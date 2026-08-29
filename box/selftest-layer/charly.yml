@@ -2,4 +2,5 @@ selftest-layer:
     candy:
         base: fedora
         candy:
+            - '@github.com/opencharly/layer-supervisord:v2026.240.0121'
             - '@github.com/opencharly/pod-sshd:v2026.239.1637'

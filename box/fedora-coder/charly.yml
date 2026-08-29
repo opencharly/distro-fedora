@@ -25,7 +25,7 @@ fedora-coder:
             - '@github.com/opencharly/layer-build-toolchain:v2026.239.1636'
             - '@github.com/opencharly/layer-dev-tools:v2026.239.1624'
             - '@github.com/opencharly/layer-pre-commit:v2026.239.1552'
-            - '@github.com/opencharly/layer-direnv:v2026.239.1629'
+            - '@github.com/opencharly/layer-direnv:v2026.241.0738'
             - '@github.com/opencharly/layer-gh:v2026.239.1624'
             - '@github.com/opencharly/layer-typst:v2026.240.1854'
             - '@github.com/opencharly/layer-asciinema:v2026.240.0119'
