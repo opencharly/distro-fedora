@@ -866,5 +866,3 @@ discover:
       recursive: true
     - path: candy
       recursive: true
-# sweep: pins advanced + 12-box resolution proof
-# sweep: 19-box resolution proof (all pin-bumped clusters covered)
