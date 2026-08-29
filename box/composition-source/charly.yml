@@ -3,7 +3,7 @@ composition-source:
         base: fedora
         candy:
             - '@github.com/opencharly/layer-supervisord:v2026.240.0121'
-            - '@github.com/opencharly/charly/candy/charly:v2026.240.0831'
+            - '@github.com/opencharly/layer-charly:v2026.241.1407'
         plan:
             - check: command=test -x /usr/bin/charly
               id: composition-source-charly

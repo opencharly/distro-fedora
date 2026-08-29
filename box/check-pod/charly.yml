@@ -11,7 +11,7 @@ check-pod:
         candy:
             - '@github.com/opencharly/layer-supervisord:v2026.240.0121'
             - '@github.com/opencharly/layer-check-base-layer:v2026.239.1620'
-            - '@github.com/opencharly/charly/candy/check-stack-layer:v2026.240.0831'
+            - '@github.com/opencharly/layer-check-stack-layer:v2026.241.1216'
             # The DUAL-PLACEMENT plugin candy: its baked `externalprobe` check rides in,
             # and the verb dispatches via the COMPILED-IN provider (the candy is listed
             # in charly.yml compiled_plugins, so registerCompiledPlugin registered it
@@ -27,7 +27,7 @@ check-pod:
             # build-time-act (unix_group groupadd) cross-repo pattern; the
             # examplestep-build-baked check below proves it executed.
             - '@github.com/opencharly/plugin-example-step/candy/plugin-example-step:v2026.237.1421'
-            - '@github.com/opencharly/charly/candy/examplestep-consumer:v2026.240.0831'
+            - '@github.com/opencharly/layer-examplestep-consumer:v2026.241.1216'
             # BUILD-TIME BUILDER plugin execution. plugin-example-builder provides
             # builder:examplebuilder; examplebuilder-consumer's `external_builder:
             # examplebuilder` drives emitExternalBuilderStages, so at image build the

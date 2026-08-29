@@ -6,8 +6,10 @@
 #  Fedora-rooted app/fixture box — all discovered under box/.
 #
 #  This repo VENDORS NO CANDIES: every candy is an
-#  `@github.com/opencharly/charly/candy/<name>:<tag>` ref into the main
-#  opencharly repo's shared candy library. Bases resolve to LOCAL boxes by bare
+#  `@github.com/opencharly/<kind>-<name>:<tag>` ref to that candy's OWN repo (the
+#  candy de-submodule cutover — they no longer live inside the main opencharly
+#  repo, so a ref through `charly/candy/<name>` would pin a stale copy at whatever
+#  charly tag it named). Bases resolve to LOCAL boxes by bare
 #  name (`base: fedora`, `base: nvidia`); the build vocabulary
 #  (distro/builder/init) comes from the charly binary's embedded defaults. There
 #  is NO namespace import (`import: []`) — nothing here depends on the main repo
@@ -202,7 +204,7 @@ check-stepkind-emit-pod:
             Sole proof of the F-STEP-EMIT BUILD leg — the pod-overlay OCITarget open external-step arm that bakes a class:step plugin's build-context Containerfile fragment. A disposable pod bed reusing the check-pod image that add_candy-overlays plugin-example-stepkind (the out-of-tree class:step plugin declaring StepContract emits=true + serving OpEmit) and stepkind-build-consumer (a candy with a BUILD-context run: plugin: examplestepkind step). At the overlay build charly lowers the run-step to an external step (external:examplestepkind), OCITarget.emitExternalStep consults the plugin's declared Emits=true, Invokes its OpEmit, and splices the returned Containerfile RUN — baking /etc/examplestepkind-build-baked (carrying STEPKIND-BUILD-BAKED-OK) into the overlay image. Asserts the file is present inside the RUNNING container, so it passes iff the OpEmit fragment baked through the external-step arm and the overlay (not the base check-pod image) deployed.
         add_candy:
             - '@github.com/opencharly/plugin-example-stepkind/candy/plugin-example-stepkind:v2026.237.1421'
-            - '@github.com/opencharly/charly/candy/stepkind-build-consumer:v2026.240.0831'
+            - '@github.com/opencharly/layer-stepkind-build-consumer:v2026.241.1216'
         plan:
             - check: the external-step OpEmit fragment baked — /etc/examplestepkind-build-baked is present inside the running container carrying STEPKIND-BUILD-BAKED-OK, proving the OCITarget external-step build-emit arm spliced the plugin's OpEmit fragment into the overlay image
               id: stepkind-emit-baked-deployed
@@ -410,7 +412,7 @@ check-fedora-vm:
         lifecycle: dev
         description: Sole proof the charly toolchain installs on a Fedora Cloud 43 guest — the charly candy installs the binary from the published dnf repo (the distro-repo mechanism, charly#388), landing /usr/bin/charly; the composed virtualization/gocryptfs/socat layers install their deps. Disposable Fedora Cloud 43 libvirt VM, overlays the add_candy charly layer, then asserts charly binary + version (CHARLY-BINARY-OK) and the welded command plugins dispatching project-less (WELDED-CMD-PROJECT-LESS-OK).
         add_candy:
-            - '@github.com/opencharly/charly/candy/charly:v2026.240.0831'
+            - '@github.com/opencharly/layer-charly:v2026.241.1407'
         install_opts:
             allow_repo_changes: true
             allow_root_tasks: true
