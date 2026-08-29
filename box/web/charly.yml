@@ -2,5 +2,5 @@ web:
     candy:
         base: fedora
         candy:
-            - '@github.com/opencharly/layer-supervisord:v2026.239.1300'
-            - '@github.com/opencharly/pod-web-layer:v2026.237.458'
+            - '@github.com/opencharly/layer-supervisord:v2026.240.0121'
+            - '@github.com/opencharly/pod-web-layer:v2026.239.1636'

@@ -9,8 +9,8 @@ check-pod:
             - fedora:43
             - fedora
         candy:
-            - '@github.com/opencharly/layer-check-base-layer:v2026.237.455'
-            - '@github.com/opencharly/charly/candy/check-stack-layer:v2026.231.0714'
+            - '@github.com/opencharly/layer-check-base-layer:v2026.239.1620'
+            - '@github.com/opencharly/charly/candy/check-stack-layer:v2026.240.0831'
             # The DUAL-PLACEMENT plugin candy: its baked `externalprobe` check rides in,
             # and the verb dispatches via the COMPILED-IN provider (the candy is listed
             # in charly.yml compiled_plugins, so registerCompiledPlugin registered it
@@ -26,14 +26,14 @@ check-pod:
             # build-time-act (unix_group groupadd) cross-repo pattern; the
             # examplestep-build-baked check below proves it executed.
             - '@github.com/opencharly/plugin-example-step/candy/plugin-example-step:v2026.237.1421'
-            - '@github.com/opencharly/charly/candy/examplestep-consumer:v2026.231.0714'
+            - '@github.com/opencharly/charly/candy/examplestep-consumer:v2026.240.0831'
             # BUILD-TIME BUILDER plugin execution. plugin-example-builder provides
             # builder:examplebuilder; examplebuilder-consumer's `external_builder:
             # examplebuilder` drives emitExternalBuilderStages, so at image build the
             # builder's OpResolve emits a FROM…AS stage that COPYs /opt/examplebuilder-artifact
             # into the image. The examplebuilder-build-baked check below proves it executed.
             - '@github.com/opencharly/plugin-example-builder/candy/plugin-example-builder:v2026.237.1420'
-            - '@github.com/opencharly/layer-examplebuilder-consumer:v2026.237.456'
+            - '@github.com/opencharly/layer-examplebuilder-consumer:v2026.239.1621'
         plan:
             - check: the examplebuilder external builder plugin EXECUTED at image build — its OpResolve emitted a multi-stage builder that COPYd /opt/examplebuilder-artifact into the check-pod image (proves the build-time external-BUILDER seam emitExternalBuilderStages + Invoke(OpResolve))
               id: examplebuilder-build-baked

@@ -19,7 +19,7 @@ tutorial-shell:
         base: fedora
         candy:
             - '@github.com/opencharly/layer-ripgrep:v2026.235.1653'
-            - '@github.com/opencharly/pod-sshd:v2026.237.558'
+            - '@github.com/opencharly/pod-sshd:v2026.239.1637'
         plan:
             # The box asserts ONE thing, and only what composition itself produces.
             #

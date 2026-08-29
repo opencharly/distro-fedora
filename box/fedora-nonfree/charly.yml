@@ -13,4 +13,4 @@ fedora-nonfree:
             npm: fedora-builder
             pixi: fedora-builder
         candy:
-            - '@github.com/opencharly/layer-rpmfusion:v2026.237.458'
+            - '@github.com/opencharly/layer-rpmfusion:v2026.239.1634'

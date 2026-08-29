@@ -4,11 +4,11 @@ jupyter-ml-notebook:
         platform:
             - linux/amd64
         candy:
-            - '@github.com/opencharly/layer-agent-forwarding:v2026.237.804'
-            - '@github.com/opencharly/pod-jupyter-ml:v2026.237.936'
-            - '@github.com/opencharly/layer-notebook-templates:v2026.237.557'
-            - '@github.com/opencharly/layer-notebook-finetuning:v2026.237.936'
-            - '@github.com/opencharly/layer-notebook-ollama:v2026.237.939'
-            - '@github.com/opencharly/layer-notebook-llm-on-supercomputers:v2026.237.556'
-            - '@github.com/opencharly/layer-notebook-openrouter:v2026.237.940'
-            - '@github.com/opencharly/pod-dbus:v2026.235.2115'
+            - '@github.com/opencharly/layer-agent-forwarding:v2026.239.1607'
+            - '@github.com/opencharly/pod-jupyter-ml:v2026.239.1604'
+            - '@github.com/opencharly/layer-notebook-templates:v2026.240.0201'
+            - '@github.com/opencharly/layer-notebook-finetuning:v2026.239.1606'
+            - '@github.com/opencharly/layer-notebook-ollama:v2026.239.1601'
+            - '@github.com/opencharly/layer-notebook-llm-on-supercomputers:v2026.240.0119'
+            - '@github.com/opencharly/layer-notebook-openrouter:v2026.239.1600'
+            - '@github.com/opencharly/pod-dbus:v2026.239.1555'
