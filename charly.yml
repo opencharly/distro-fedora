@@ -19,7 +19,7 @@
 #  this charly.yml). From the parent repo: `charly -C box/fedora box build
 #  fedora-coder`, or anywhere: `charly --repo opencharly/distro-fedora box build
 #  fedora-coder`.
-version: 2026.248.1030
+version: 2026.249.2125
 # Canonical repo identity — lets the import-namespace loader recognize this repo
 # when main imports it under the `fedora` namespace to build the relocated boxes.
 # The dependency is one-directional: main imports fedora; fedora imports nothing
@@ -458,24 +458,22 @@ check-fedora-vm:
 # are siblings under a GROUP, brought up by foldMembers' shared deploy+check
 # lifecycle (R3); the driver is an instrument, never check-live'd itself.
 check-cross-pod-cdp:
-    group:
+    pod:
+        image: web
+        plan:
+            - check: http=http://127.0.0.1:${HOST_PORT:8080}/
+              id: web-fixture-up
+              context:
+                - runtime
+              http:
+                http: http://127.0.0.1:${HOST_PORT:8080}/
+                status: 200
+                body:
+                    - contains: charly-fixture-web-content-marker
         disposable: true
         lifecycle: dev
         description: >-
-            Sole proof of pod->pod cross-deployment CDP probing — a Chrome DRIVER pod (sibling member) CDP-renders a separate web SUBJECT pod (sibling member) over the shared charly net via venue-from-position + ${HOST:web}. A group with web + chrome sibling members; http-checks the subject marker on the web member, then cdp open / cdp text steps under the chrome member (venue=chrome) navigate to ${HOST:web}:8080 and assert the rendered fixture marker.
-    web:
-        pod:
-            image: web
-            plan:
-                - check: http=http://127.0.0.1:${HOST_PORT:8080}/
-                  id: web-fixture-up
-                  context:
-                    - runtime
-                  http:
-                    http: http://127.0.0.1:${HOST_PORT:8080}/
-                    status: 200
-                    body:
-                        - contains: charly-fixture-web-content-marker
+            Sole proof of pod->pod cross-deployment CDP probing — a Chrome DRIVER pod (sibling member) CDP-renders a separate web SUBJECT pod (sibling member) over the shared charly net via venue-from-position + ${HOST:check-cross-pod-cdp}. The web SUBJECT pod is the bed root; the chrome DRIVER pod is a sibling member; http-checks the subject marker on the bed root, then cdp open / cdp text steps under the chrome member (venue=chrome) navigate to ${HOST:check-cross-pod-cdp}:8080 and assert the rendered fixture marker.
     chrome:
         pod:
             image: chrome-headless
@@ -484,7 +482,7 @@ check-cross-pod-cdp:
                   id: cdp-open-web-subject
                   cdp:
                     method: open
-                    url: http://${HOST:web}:8080
+                    url: http://${HOST:check-cross-pod-cdp}:8080
                   eventually: 45s
                   retry_interval: 3s
                   context:
@@ -566,11 +564,15 @@ check-preempt-arbiter-pod:
 # acquire AFTER the holder is already up — the real holdersToStop → stopHolders →
 # lease → restoreHolders round-trip.
 #
-# Shape: a GROUP bed (no workload root ⇒ the runner's pre-acquire at bring-up is a
-# no-op — the group root declares no requires_exclusive) with two pod members.
-# ORDERING (no sleeps, R4): bringUpMembers iterates sortedMemberKeys (deterministic
-# sort.Strings), so `preempt-holder` (…-h…) is config+start+ready BEFORE
-# `preempt-taker` (…-t…). When the taker's `charly start` then runs
+# Shape (post-group schema): a BENIGN check-pod bed root + two pod members. The holder
+# stays a MEMBER — the Cutover-C unroll's mechanical promotion of the sorted-first
+# member to bed root made the PREEMPTED holder the root, and check-live's pod
+# root-liveness gate then hard-failed (plugin-pod resolveServiceInit: "container
+# charly-check-preempt-live-pod is not running" — the bed's own preemption had
+# legitimately stopped it). The benign root keeps the runner's pre-acquire a no-op
+# (the root declares no requires_exclusive). ORDERING (no sleeps, R4): the
+# `preempt-holder` member (…-h…) is config+start+ready BEFORE the `preempt-taker`
+# member (…-t…). When the taker's `charly start` then runs
 # acquireResourceForClaimant, the arbiter finds the RUNNING holder
 # (preemptible.holds:[test-lock] ∩ requires_exclusive:[test-lock]) and gracefully
 # stops it, recording a persistent lease. The order is the member SORT, not a timing
@@ -584,11 +586,12 @@ check-preempt-arbiter-pod:
 # `charly remove` → releaseResourceClaim → restoreHolders restarts the holder.
 # =============================================================================
 check-preempt-live-pod:
-    group:
+    pod:
+        image: check-pod
         disposable: true
         lifecycle: dev
         description: >-
-            Sole R10 witness of LIVE resource preemption end-to-end — a preemptible HOLDER pod member actually gracefully STOPPED by a requires_exclusive CLAIMANT pod member (the coverage check-preempt-arbiter-pod's bed-root claimant cannot give: its lease is pre-acquired before any holder runs). A GROUP bed (no workload root, so the runner's pre-acquire is a no-op) with two check-pod members; bringUpMembers' deterministic sortedMemberKeys brings preempt-holder up FIRST (preemptible: holds:[test-lock]), then preempt-taker (requires_exclusive:[test-lock]) whose own `charly start` fires AcquireExclusive → the arbiter finds the RUNNING holder → stopHolders gracefully stops it → records a persistent lease. ZERO GPU (test-lock is selector-less, applyMode skips the flip); no sleeps (ordering is the member sort). preemptor-lease-recorded asserts `charly preempt status` surfaces the taker's test-lock lease; preemptor-stopped-the-holder asserts the holder is recorded as a preempted (stopped) holder of that lease. Proves a group MEMBER can be an arbiter holder/claimant (persistBedDeployOverrides now seeds member arbiter fields); on teardown the taker's `charly remove` → releaseResourceClaim → restoreHolders restarts the holder.
+            Sole R10 witness of LIVE resource preemption end-to-end — a preemptible HOLDER pod member actually gracefully STOPPED by a requires_exclusive CLAIMANT pod member (the coverage check-preempt-arbiter-pod's bed-root claimant cannot give: its lease is pre-acquired before any holder runs). A BENIGN check-pod bed-root witness carries no arbiter fields — the root must survive check-live's pod root-liveness gate, which the unroll's first cut failed by promoting the preempted holder to root (the holder stays a MEMBER); the preemptible HOLDER preempt-holder check-pod member (preemptible: holds:[test-lock]); the CLAIMANT preempt-taker check-pod member (requires_exclusive:[test-lock]); sortedMemberKeys brings preempt-holder up FIRST, then preempt-taker whose own `charly start` fires AcquireExclusive → the arbiter finds the RUNNING holder → stopHolders gracefully stops it → records a persistent lease. ZERO GPU (test-lock is selector-less, applyMode skips the flip); no sleeps (ordering is the member sort). preemptor-lease-recorded asserts `charly preempt status` surfaces the taker's test-lock lease; preemptor-stopped-the-holder asserts the holder is recorded as a preempted (stopped) holder of that lease. Proves MEMBER-vs-MEMBER arbiter holder/claimant end-to-end (persistBedDeployOverrides seeds member arbiter fields); on teardown the taker's `charly remove` → releaseResourceClaim → restoreHolders restarts the holder.
     preempt-holder:
         pod:
             image: check-pod
@@ -637,13 +640,15 @@ check-preempt-live-pod:
 # SAME kit.ReadinessProvider()-gated wait-until-stopped
 # poll the pod path uses.
 #
-# Shape: a GROUP bed (no workload root) with a vm: HOLDER member (preempt-vm-holder,
-# `from: web-vm` — box/fedora's own lightweight local vm template, already used by
-# check-cross-vm-http; the ROOT project's eval-vm is a DIFFERENT project's entity and
-# not resolvable from this repo) and
-# a pod: CLAIMANT member (preempt-vm-taker). ORDERING (no sleeps, R4): bringUpMembers'
-# deterministic sortedMemberKeys brings preempt-vm-holder (…-h…) up FIRST, then
-# preempt-vm-taker (…-t…); the taker's own `charly start` fires acquireResourceForClaimant
+# Shape (post-group schema): a BENIGN check-pod bed root + two members. The vm: HOLDER
+# stays a MEMBER (preempt-vm-holder, `from: web-vm` — box/fedora's own lightweight local
+# vm template, already used by check-cross-vm-http; the ROOT project's eval-vm is a
+# DIFFERENT project's entity and not resolvable from this repo) — the unroll's first cut
+# promoted the holder to bed root and the taker's re-bring-up acquire STOPPED that root
+# VM, hanging check-live-rebuild against it; and
+# a pod: CLAIMANT member (preempt-vm-taker). ORDERING (no sleeps, R4): the holder member
+# is brought up FIRST (…h… < …t…), then
+# preempt-vm-taker; the taker's own `charly start` fires acquireResourceForClaimant
 # → the arbiter finds the RUNNING vm holder (preemptible.holds:[vm-test-lock] ∩
 # requires_exclusive:[vm-test-lock]) → stopHolders → pluginHolderStop gracefully shuts
 # the VM down (libvirt) and polls until it is actually stopped → records a persistent
@@ -662,11 +667,12 @@ check-preempt-live-pod:
 # down in the interim).
 # =============================================================================
 check-preempt-vm-live:
-    group:
+    pod:
+        image: check-pod
         disposable: true
         lifecycle: dev
         description: >-
-            R10 witness of LIVE resource preemption on a VM-VENUE holder — the sibling of check-preempt-live-pod's pod-venue proof, covering candy/plugin-preempt/holder_dispatch.go's pluginHolderStop/pluginHolderStart addr.Vm!="" branch (stopVMPlugin/startVMPlugin dispatched via sdk.Executor.InvokeProvider(ClassVerb,"libvirt",…), never a host-side reverse-RPC callback). A GROUP bed with a vm: HOLDER member (preempt-vm-holder, `from: web-vm`, preemptible: holds:[vm-test-lock]) and a pod: CLAIMANT member (preempt-vm-taker, requires_exclusive:[vm-test-lock], a DISTINCT token from the pod-only beds' test-lock so concurrent bed runs never contend for the same resource); bringUpMembers' deterministic sortedMemberKeys brings the vm holder up FIRST, then the taker, whose own `charly start` fires AcquireExclusive → the arbiter finds the RUNNING vm holder → stopHolders → pluginHolderStop gracefully shuts the VM down (libvirt) and polls (kit.ReadinessProvider()-gated) until it is actually stopped → records a persistent lease. preemptor-vm-lease-recorded asserts `charly preempt status` surfaces the taker's vm-test-lock lease; preemptor-vm-stopped-the-holder asserts the vm holder is recorded as a preempted (stopped) holder. ZERO GPU (vm-test-lock is selector-less, applyMode skips the flip on every host); the GPU switchMode/ensureCDI InvokeProvider path stays code-verified only (no disposable bed here can allocate a real GPU token). On teardown the taker's `charly remove` → releaseResourceClaim → restoreHolders restarts the VM.
+            R10 witness of LIVE resource preemption on a VM-VENUE holder — the sibling of check-preempt-live-pod's pod-venue proof, covering candy/plugin-preempt/holder_dispatch.go's pluginHolderStop/pluginHolderStart addr.Vm!="" branch (stopVMPlugin/startVMPlugin dispatched via sdk.Executor.InvokeProvider(ClassVerb,"libvirt",…), never a host-side reverse-RPC callback). A BENIGN check-pod bed-root witness carries no arbiter fields — the root must survive the check-live/check-live-rebuild phases, which the unroll's first cut failed by promoting the preempted holder VM to root (the taker's re-bring-up acquire stopped the root VM and check-live-rebuild hung against it); the VM: HOLDER stays a MEMBER (preempt-vm-holder, `from: web-vm`, preemptible: holds:[vm-test-lock]); the pod: CLAIMANT preempt-vm-taker is a member (requires_exclusive:[vm-test-lock], a DISTINCT token from the pod-only beds' test-lock so concurrent bed runs never contend for the same resource); sortedMemberKeys brings the vm holder up FIRST, then the taker, whose own `charly start` fires AcquireExclusive → the arbiter finds the RUNNING vm holder → stopHolders → pluginHolderStop gracefully shuts the VM down (libvirt) and polls (kit.ReadinessProvider()-gated) until it is actually stopped → records a persistent lease. preemptor-vm-lease-recorded asserts `charly preempt status` surfaces the taker's vm-test-lock lease; preemptor-vm-stopped-the-holder asserts the vm holder is recorded as a preempted (stopped) holder. ZERO GPU (vm-test-lock is selector-less, applyMode skips the flip on every host); the GPU switchMode/ensureCDI InvokeProvider path stays code-verified only (no disposable bed here can allocate a real GPU token). On teardown the taker's `charly remove` → releaseResourceClaim → restoreHolders restarts the VM.
     preempt-vm-holder:
         vm:
             from: web-vm
@@ -705,26 +711,24 @@ check-preempt-vm-live:
                     - contains: preempt-vm-holder
 # Cross-deployment probing ACROSS KINDS (local→VM): a LOCAL (host) DRIVER member
 # curls a web-server SUBJECT running in a VM member. The driver reaches the guest's
-# nginx :80 via ${HOST:web-vm:80} → resolveCheckEndpoint's VM branch →
-# `ssh -L 127.0.0.1:<rand>:127.0.0.1:80` over the managed charly-web-vm alias —
+# nginx :80 via ${HOST:check-cross-vm-http:80} → resolveCheckEndpoint's VM branch →
+# `ssh -L 127.0.0.1:<rand>:127.0.0.1:80` over the managed charly-check-cross-vm-http alias —
 # the SAME host-vantage resolver check-cross-local-http uses for a pod subject;
 # only the subject KIND differs (VM vs pod), so this is the cross-kind proof
 # with ZERO VM-specific check code. A pod driver can't reach a host-vantage
 # 127.0.0.1 (its own netns), so the generic, no-hack VM driver runs host-side.
 check-cross-vm-http:
-    group:
+    vm:
+        from: web-vm
         disposable: true
         lifecycle: dev
         description: >-
-            Sole proof of cross-KIND local->VM cross-deployment probing — a host local DRIVER member reaches a web SUBJECT inside a VM member via ${HOST:web-vm:80}'s ssh -L forward (resolveCheckEndpoint VM branch), zero VM-specific check code. A group with a web-vm subject member (disposable Fedora Cloud libvirt VM running cloud-init nginx on guest :80) + a host-driver-vm local driver member; a curl command step under host-driver-vm (venue=host-driver-vm) against ${HOST:web-vm:80} (ssh -L tunnel over the managed charly-web-vm alias) asserts the vm fixture marker.
-    web-vm:
-        vm:
-            from: web-vm
+            Sole proof of cross-KIND local->VM cross-deployment probing — a host local DRIVER member reaches a web SUBJECT inside the bed-root VM via ${HOST:check-cross-vm-http:80}'s ssh -L forward (resolveCheckEndpoint VM branch), zero VM-specific check code. The web-vm subject (disposable Fedora Cloud libvirt VM running cloud-init nginx on guest :80) is the bed root; the host-driver-vm local driver is a sibling member; a curl command step under host-driver-vm (venue=host-driver-vm) against ${HOST:check-cross-vm-http:80} (ssh -L tunnel over the managed charly-check-cross-vm-http alias) asserts the vm fixture marker.
     host-driver-vm:
         local:
             from: check-cross-local-driver
             plan:
-                - check: command=curl -fsS http://${HOST:web-vm:80}/
+                - check: command=curl -fsS http://${HOST:check-cross-vm-http:80}/
                   id: local-driver-reaches-vm
                   eventually: 90s
                   retry_interval: 5s
@@ -732,35 +736,33 @@ check-cross-vm-http:
                     - contains: charly-fixture-vm-content-marker
                   context:
                     - runtime
-                  command: "curl -fsS http://${HOST:web-vm:80}/"
+                  command: "curl -fsS http://${HOST:check-cross-vm-http:80}/"
 # Cross-deployment across kinds (local→pod): a LOCAL (host) DRIVER member curls a
 # web-server SUBJECT pod member via its published port. Exercises a NON-pod member
 # bring-up (`charly fleet add` the local driver) + venue-from-position dispatch +
-# ${HOST:web-local:8080} (host-vantage addressing of a pod subject).
+# ${HOST:check-cross-local-http:8080} (host-vantage addressing of a pod subject).
 check-cross-local-http:
-    group:
+    pod:
+        image: web
+        plan:
+            - check: http=http://127.0.0.1:${HOST_PORT:8080}/
+              id: web-fixture-up
+              context:
+                - runtime
+              http:
+                http: http://127.0.0.1:${HOST_PORT:8080}/
+                status: 200
+                body:
+                    - contains: charly-fixture-web-content-marker
         disposable: true
         lifecycle: dev
         description: >-
-            Sole proof of cross-KIND local->pod cross-deployment probing — a non-pod local DRIVER member reaches a web SUBJECT pod member via its published port (resolveCheckEndpoint pod branch), the pod-subject twin of check-cross-vm-http. A group with a web-local subject member (nginx :8080) + a kind:local host-driver member; http-checks the subject marker on web-local directly, then a curl command step under host-driver (venue=host-driver) against ${HOST:web-local:8080} asserts the fixture marker.
-    web-local:
-        pod:
-            image: web
-            plan:
-                - check: http=http://127.0.0.1:${HOST_PORT:8080}/
-                  id: web-fixture-up
-                  context:
-                    - runtime
-                  http:
-                    http: http://127.0.0.1:${HOST_PORT:8080}/
-                    status: 200
-                    body:
-                        - contains: charly-fixture-web-content-marker
+            Sole proof of cross-KIND local->pod cross-deployment probing — a non-pod local DRIVER member reaches a web SUBJECT pod member via its published port (resolveCheckEndpoint pod branch), the pod-subject twin of check-cross-vm-http. The web SUBJECT pod (nginx :8080) is the bed root; the kind:local host-driver is a sibling member; http-checks the subject marker on the bed root directly, then a curl command step under host-driver (venue=host-driver) against ${HOST:check-cross-local-http:8080} asserts the fixture marker.
     host-driver:
         local:
             from: check-cross-local-driver
             plan:
-                - check: command=curl -fsS http://${HOST:web-local:8080}/
+                - check: command=curl -fsS http://${HOST:check-cross-local-http:8080}/
                   id: local-driver-reaches-web
                   eventually: 30s
                   retry_interval: 3s
@@ -768,7 +770,7 @@ check-cross-local-http:
                     - contains: charly-fixture-web-content-marker
                   context:
                     - runtime
-                  command: "curl -fsS http://${HOST:web-local:8080}/"
+                  command: "curl -fsS http://${HOST:check-cross-local-http:8080}/"
 # Disposable Fedora Cloud VM — the substrate for check-fedora-vm, which proves
 # the charly toolchain installs on a Fedora Cloud guest (the charly candy's copy
 # step lands the binary, the composed layers install their deps).
@@ -799,7 +801,7 @@ fedora-vm:
 # (check-cross-vm-http): nginx serves a fixture marker on guest :80. A LOCAL
 # (host) DRIVER member reaches it via ${HOST:check-cross-vm-http:80} →
 # resolveCheckEndpoint's VM branch → `ssh -L 127.0.0.1:<rand>:127.0.0.1:80`
-# over the managed charly-web-vm alias (the SAME host-vantage port resolver the
+# over the managed charly-check-cross-vm-http alias (the SAME host-vantage port resolver the
 # pod beds use; the guest's :80 is reached through the SSH tunnel, never
 # exposed on the host — strictly more secure than a host port-forward).
 # ssh.port_auto picks a free host SSH port (the existing auto-port mechanism);
@@ -810,10 +812,10 @@ web-vm:
         source:
             kind: cloud_image
             distro: fedora
-            url: https://download.fedoraproject.org/pub/fedora/linux/releases/41/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-41-1.4.x86_64.qcow2
+            url: https://download.fedoraproject.org/pub/fedora/linux/releases/43/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-43-1.6.x86_64.qcow2
             checksum:
                 type: sha256
-                value: 6205ae0c524b4d1816dbd3573ce29b5c44ed26c9fbc874fbe48c41c89dd0bac2
+                value: 846574c8a97cd2d8dc1f231062d73107cc85cbbbda56335e264a46e3a6c8ab2f
             base_user: fedora
         disk_size: 6G
         ram: 2G
