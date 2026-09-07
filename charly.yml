@@ -739,7 +739,7 @@ check-cross-vm-http:
                   command: "curl -fsS http://${HOST:check-cross-vm-http:80}/"
 # Cross-deployment across kinds (local→pod): a LOCAL (host) DRIVER member curls a
 # web-server SUBJECT pod member via its published port. Exercises a NON-pod member
-# bring-up (`charly fleet add` the local driver) + venue-from-position dispatch +
+# bring-up (`charly deploy add` the local driver) + venue-from-position dispatch +
 # ${HOST:check-cross-local-http:8080} (host-vantage addressing of a pod subject).
 check-cross-local-http:
     pod:
