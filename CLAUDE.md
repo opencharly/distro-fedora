@@ -6,9 +6,10 @@ family** (`nvidia` / `python-ml`), the consumer showcase images (`fedora-coder` 
 `charly-fedora` / `fedora-test`), the `sway-browser-vnc` desktop, and the
 relocated Fedora-rooted app/fixture boxes (jupyter, jupyter-ml, comfyui, ollama,
 unsloth-studio, immich, immich-ml, openwebui, hermes, web, check-pod, redis,
-tier1/tier23, …) — all discovered under `box/`. It vendors **no candies**: every
-candy is an `@github.com/opencharly/charly/candy/<name>:<tag>` ref into main's
-shared candy library, so there is no `candy/` dir here. Every box's base is a bare
+tier1/tier23, …) — all discovered under `box/`. It vendors **no shared candy
+layers**: every candy is an `@github.com/opencharly/<layer-*|pod-*|plugin-*>[:subdir]:<tag>`
+ref from its standalone candy repo, and the one local `candy/charly-marketplace`
+closure manifest is discovered via the `discover:` block. Every box's base is a bare
 LOCAL name (`base: fedora` / `fedora-nonfree` / `nvidia`); the distro/builder/init
 build vocabulary is embedded in the `charly` binary. There is NO namespace import
 (`import: []`). Main imports THIS repo under the `fedora` namespace to build the
