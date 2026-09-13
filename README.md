@@ -22,7 +22,7 @@ binary.
 
 ## Composition — local bases, candies by reference
 
-This repo owns its bases and build targets locally, but **vendors no candies**:
+This repo owns its bases and build targets locally, but **vendors no shared candy layers**:
 
 - the Fedora base/builder stack (`fedora` → `fedora-nonfree` → `fedora-builder`)
   and the GPU base (`nvidia` / `python-ml`) are **local boxes** under `box/`,
