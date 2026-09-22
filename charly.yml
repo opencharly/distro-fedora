@@ -870,3 +870,1326 @@ discover:
       recursive: true
     - path: candy
       recursive: true
+charly-fedora-skill:
+    skill:
+        name: charly-fedora
+        family: distros
+        owner: charly-fedora
+        description: |-
+            Fedora box with the full charly toolchain using shared candies. Rootless-first —
+            runs as uid=1000 with passwordless sudo (no root, no cap_add: ALL). Same candy
+            list as charly-arch. Includes NVIDIA GPU runtime.
+            MUST be invoked before building, deploying, configuring, or troubleshooting
+            the charly-fedora box.
+        triggers:
+            - "Fedora images / `fedora*` / `box/fedora` submodule (incl. the GPU base `nvidia` / `python-ml` + `sway-browser-vnc`)"
+        content: |
+            # charly-fedora
+            
+            Fedora container with the full charly toolchain. Uses almost the same
+            candy list as `/charly-coder:charly-arch` — the tag system handles
+            Fedora-specific packages and scripts via `rpm:` sections. Supports
+            nested containers at any depth via `/charly-distros:container-nesting`.
+            
+            Lives in the **`opencharly/distro-fedora`** repo (git submodule at **`box/fedora`**).
+            Its `fedora` base is bare-local in the same self-contained submodule
+            (`import: []`) — `base: fedora`; its
+            candies (incl. the `nvidia` candy) are pulled by github reference. Build from the
+            submodule: `charly -C box/fedora box build charly-fedora`. Deploy-mode verbs work
+            from anywhere once the image is in local storage.
+            
+            ## Box Properties
+            
+            | Property | Value |
+            |----------|-------|
+            | Base | fedora (quay.io/fedora/fedora:43) |
+            | Tags | `[all, rpm, fedora, fedora:43]` |
+            | Layers | agent-forwarding, charly, golang, gh, sshd, container-nesting, nvidia |
+            | Platforms | linux/amd64 |
+            | UID / user | **1000 / user** (rootless-first) |
+            | Network | host |
+            | Security | layer-level only (from `/charly-distros:container-nesting`) |
+            | Registry | ghcr.io/opencharly |
+            
+            ### Rootless-first posture
+            
+            Runs as uid=1000 / `user` with no added capabilities. The
+            `/charly-distros:container-nesting` kernel RCA establishes that
+            `unmask=/proc/*` + subuid/subgid delegation is sufficient for rootless
+            nested containers + rootless libvirt VMs, so this box — like its
+            power-user siblings (`/charly-coder:charly-arch`, `/charly-coder:fedora-coder`,
+            `/charly-distros:githubrunner`) — needs no `cap_add: [ALL]` or
+            `label=disable` / `seccomp=unconfined`.
+            
+            The `/charly-coder:sshd` candy installs `/etc/sudoers.d/charly-user` with
+            passwordless sudo for `user`, so anything that genuinely needs root
+            is one `sudo` prefix away. Default user for every process is uid=1000.
+            
+            Resolved OCI security label:
+            
+            | Field | Value |
+            |---|---|
+            | `cap_add` | **(empty)** |
+            | `security_opt` | `[unmask=/proc/*]` (from `/charly-distros:container-nesting`) |
+            | `devices` | `[/dev/fuse, /dev/net/tun]` (from `/charly-distros:container-nesting`) |
+            | `privileged` | `false` |
+            
+            See `/charly-openclaw:openclaw-desktop` (streaming-desktop sibling) and
+            `/charly-coder:fedora-coder` (kitchen-sink dev sibling) for other boxes
+            sharing this posture, and `/charly-distros:container-nesting` for the
+            kernel `mount_too_revealing()` RCA.
+            
+            ### Why still `network: host`
+            
+            `charly-fedora` uses host networking (unlike `charly-arch`, which uses bridge)
+            so the box can reach host services and the host namespace directly.
+            charly-mcp's MCP URL rewriting (`candy/plugin-mcp/resolve.go`, the host-port
+            mapping via the `cc.ResolveEndpoint` reverse-leg) handles host-networked containers via
+            `HostConfig.NetworkMode=host` detection (see `sdk/kit/checkvars.go`'s
+            `ContainerInspection.IsHostNetworked()`), so host networking does not break
+            MCP URL rewriting. If you want charly-mcp on charly-fedora, compose it
+            into the candy list — it will work on either networking mode.
+            
+            ## What's Installed
+            
+            Full charly toolchain via shared candies:
+            
+            - **charly** — the full toolchain: charly binary + VM tools (qemu-kvm, qemu-img, libvirt tools) + gocryptfs + socat + gvisor-tap-vsock + podman-machine
+            - **golang** — Go compiler (`golang-bin`)
+            - **gh** — GitHub CLI + `git` + `git-lfs` (single-responsibility; see `/charly-coder:gh`)
+            - **sshd** — SSH server/client (`openssh-server`, `openssh-clients`) + passwordless sudo for `user`
+            - **container-nesting** — buildah, fuse-overlayfs, shadow-utils, skopeo, tailscale, libsecret + nested container config (Tailscale from `tailscale-stable` repo)
+            - **nvidia** — nvidia-container-toolkit, libva-nvidia-driver (from negativo17 repo; driver libs provided by CDI at runtime)
+            
+            ## Lifecycle
+            
+            ```bash
+            # Build (from the opencharly/distro-fedora submodule)
+            charly -C box/fedora box build charly-fedora
+            
+            # Interactive shell (as uid=1000)
+            charly shell charly-fedora
+            
+            # Run a command
+            charly shell charly-fedora -c "charly version"
+            charly shell charly-fedora -c "sudo -n whoami"    # root (passwordless)
+            
+            # Start as service
+            charly start charly-fedora
+            charly status charly-fedora
+            charly stop charly-fedora
+            ```
+            
+            ## Nested Containers
+            
+            Rootless podman works inside charly-fedora at any nesting depth. The
+            `/charly-distros:container-nesting` candy provides the config + env vars +
+            subuid/subgid delegation per the podman/stable recipe:
+            
+            ```bash
+            # Level 1: run containers inside charly-fedora
+            charly shell charly-fedora -c "podman run --rm quay.io/libpod/alpine:latest echo hello"
+            
+            # Level 2: run charly inside charly-fedora inside charly-fedora
+            charly shell charly-fedora -c "charly shell charly-fedora -c 'charly version'"
+            ```
+            
+            Use `quay.io/libpod/alpine:latest` instead of
+            `docker.io/library/alpine` to dodge Docker Hub rate limits.
+            
+            ## GPU Support
+            
+            The `/charly-distros:nvidia` candy provides NVIDIA GPU runtime:
+            
+            - `nvidia-container-toolkit` — CDI spec generation (driver userspace libs provided by CDI at runtime, matching host kernel module)
+            - `libva-nvidia-driver` — VA-API acceleration
+            
+            `charly` triggers CDI regeneration plugin-side (`pluginEnsureCDI` in
+            `candy/plugin-preempt/holder_dispatch.go`, via `spec.GpuSwitchActionEnsureCDI` — the
+            former in-core `EnsureCDI()` shim is DELETED, K-wave 2 cone R3) before launching GPU
+            containers. GPU access works at any nesting depth.
+            
+            ## Verification
+            
+            ```bash
+            charly shell charly-fedora -c "id"                  # uid=1000(user)
+            charly shell charly-fedora -c "sudo -n whoami"      # root
+            charly shell charly-fedora -c "charly version"
+            charly shell charly-fedora -c "charly doctor"
+            charly shell charly-fedora -c "podman info"
+            charly shell charly-fedora -c "podman run --rm quay.io/libpod/alpine:latest echo OK"
+            charly shell charly-fedora -c "which nvidia-ctk"
+            
+            # Verify OCI tags
+            charly box inspect charly-fedora --format tags
+            # ["all","rpm","fedora","fedora:43"]
+            ```
+            
+            ## Unified with charly-arch
+            
+            Both `charly-fedora` and `/charly-coder:charly-arch` use the exact same candy
+            list. The tag system (`build: [rpm]` + `distro: ["fedora:43", fedora]`
+            vs `build: [pac]` + `distro: [arch]`) selects the right packages
+            and scripts per distro.
+            
+            ## Key Candies
+            
+            - `/charly-tools:charly` — the full toolchain: charly binary plus VM/encryption tools
+            - `/charly-distros:container-nesting` — nested rootless podman/buildah (authoritative RCA for `mount_too_revealing()` + `unmask=/proc/*`)
+            - `/charly-coder:sshd` — SSH daemon + passwordless sudo for `user`
+            - `/charly-coder:gh` — GitHub CLI + git + git-lfs (owns all git tooling)
+            - `/charly-distros:nvidia` — NVIDIA GPU runtime
+            
+            ## Related Boxes
+            
+            - `/charly-distros:fedora` — parent base image
+            - `/charly-coder:charly-arch` — Arch counterpart, same layers, same rootless posture
+            - `/charly-coder:fedora-coder` — kitchen-sink dev sibling (adds coding CLIs + DevOps)
+            - `/charly-openclaw:openclaw-desktop` — streaming-desktop counterpart (charly toolchain + browser-accessible Wayland); shares the rootless-first posture
+            - `/charly-distros:githubrunner` — self-hosted GitHub Actions runner; same uid=1000 posture
+            
+            ## Related Commands
+            
+            - `/charly-core:shell` — open an interactive shell in charly-fedora (as uid=1000 with sudo)
+            - `/charly-core:service` — manage charly-fedora as a service
+            - `/charly-vm:vm` — nested libvirt VMs via `qemu:///session` (rootless)
+            - `/charly-build:charly-mcp-cmd` — MCP gateway deployment patterns (if you add `charly-mcp` to the candies)
+            
+            ## Related
+            
+            - `/charly-image:image` — image family umbrella (`candy:` image entries — those carrying `base:`/`from:` — in `charly.yml`, build/validate/inspect/list)
+            - `/charly-build:build` — the embedded build vocabulary (distros, builders, init-systems)
+
+fedora-builder-skill:
+    skill:
+        name: fedora-builder
+        family: distros
+        owner: fedora-builder
+        description: |-
+            Builder image with pixi, Node.js, and C/C++ build toolchain. Used as the
+            default builder for multi-stage image builds.
+            MUST be invoked before building, deploying, configuring, or troubleshooting the fedora-builder box.
+        triggers:
+            - "Fedora images / `fedora*` / `box/fedora` submodule (incl. the GPU base `nvidia` / `python-ml` + `sway-browser-vnc`)"
+        content: |
+            # fedora-builder
+            
+            Builder image with package managers and compilation tools. Default builder for pixi, npm, and cargo multi-stage builds (declared via `builds: [pixi, npm, cargo]`).
+            
+            **Owned by the `opencharly/distro-fedora` submodule.** Lives bare-local in the
+            **`opencharly/distro-fedora`** submodule (mounted at `box/fedora`), alongside
+            `/charly-distros:fedora` + `/charly-distros:fedora-nonfree`; the submodule is
+            SELF-CONTAINED (`import: []`), so its images route builders to a bare-local
+            `fedora-builder`. Its `rpmfusion`/`pixi`/`nodejs`/`build-toolchain` candies are
+            pinned as github refs (`@github.com/opencharly/charly/candy/<name>:<tag>`) so
+            the same definition resolves in both main and the submodule. Build with
+            `charly box build fedora-builder` from the submodule.
+            
+            ## Box Properties
+            
+            | Property | Value |
+            |----------|-------|
+            | Base | fedora |
+            | Layers | rpmfusion, pixi, nodejs, build-toolchain |
+            | Platforms | linux/amd64 |
+            | Registry | ghcr.io/opencharly |
+            
+            ## Full Candy Stack
+            
+            1. `fedora` (quay.io/fedora/fedora:43)
+            2. `rpmfusion` — RPM Fusion free + nonfree repo configuration. Applied **first** so subsequent candies can `dnf install` packages from RPM Fusion (e.g. `x264-devel`, `ffmpeg-devel`, `libva-devel`)
+            3. `pixi` — pixi package manager + env paths
+            4. `nodejs` — Node.js + npm
+            5. `build-toolchain` — gcc, cmake, autoconf, ninja, git, pkg-config, **plus** the smithay/cargo build deps (`rust`, `cargo`, `clang-devel`, `nasm`, `wayland-devel`, `libva-devel`, `x264-devel`, `ffmpeg-devel`, `pixman-devel`, …) needed for builder-stage compilation of Wayland compositors like pixelflux. See `/charly-coder:build-toolchain` for the full grouped list.
+            
+            ## Why rpmfusion is first
+            
+            The build-toolchain candy's `dnf install` references packages that live in RPM Fusion free
+            (`libva-devel`, `x264-devel`, `ffmpeg-devel`). These are required to build pixelflux from
+            source (its `libva-sys`, `x264-sys`, and `ffmpeg-sys-next` cargo crates link against the
+            system libs). Without rpmfusion applied first, those `dnf install` calls would fail.
+            See `/charly-selkies:selkies` (Patched pixelflux build pipeline) for the consumer story.
+            
+            ## Role in Build System
+            
+            This image is referenced in `defaults.builders` as the builder for `pixi`, `npm`, and `cargo` multi-stage builds. It declares `builds: [pixi, npm, cargo]` to advertise its capabilities. The generator uses it as the `FROM` stage in multi-stage builds, providing build tools without bloating final images.
+            
+            ## Quick Start
+            
+            ```bash
+            charly box build fedora-builder
+            charly shell fedora-builder
+            ```
+            
+            ## Key Candies
+            
+            - `/charly-languages:pixi` — Python package management foundation
+            - `/charly-coder:nodejs` — Node.js runtime and npm
+            - `/charly-coder:build-toolchain` — C/C++ compilation tools
+            
+            ## Related Boxes
+            
+            - `/charly-distros:fedora` — parent base
+            
+            ## Verification
+            
+            After `charly box build`:
+            - `charly box list` — box appears in list
+            - `charly shell fedora-builder` — interactive shell works
+            
+            ## When to Use This Skill
+            
+            **MUST be invoked** when the task involves the fedora-builder box, multi-stage builds, or build cache configuration. Invoke this skill BEFORE reading source code or launching Explore agents.
+            
+            ## Related
+            
+            - `/charly-image:image` — image family umbrella (`candy:` image entries — those carrying `base:`/`from:` — in `charly.yml`, build/validate/inspect/list)
+            - `/charly-build:build` — the embedded build vocabulary (distros, builders, init-systems)
+
+fedora-coder-skill:
+    skill:
+        name: fedora-coder
+        family: coder
+        owner: fedora-coder
+        description: |-
+            Kitchen-sink development box: coding + AI-coding CLIs + DevOps tooling
+            in one container. Fedora-nonfree base, direct candies spanning language
+            runtimes, build tooling, AI coding CLIs, and the full cloud/devops
+            stack. Runs as uid 1000 with passwordless sudo — rootless-first, matches
+            the /charly-openclaw:openclaw-desktop security posture.
+            Use when working with the fedora-coder box — specifically any task that
+            involves SSH-ing into a single container and having every tool a polyglot
+            engineer reaches for during a working day already installed.
+        triggers:
+            - "Fedora images / `fedora*` / `box/fedora` submodule (incl. the GPU base `nvidia` / `python-ml` + `sway-browser-vnc`)"
+        content: |-
+            # fedora-coder
+            
+            The everyday-development counterpart to `/charly-distros:charly-fedora`: all the
+            coding + AI + DevOps tooling a developer needs in one box, no desktop,
+            no streaming. Distinct from `openclaw-desktop` (which adds the
+            browser-streamed Wayland desktop) — `fedora-coder` is headless and
+            meant to be accessed via `ssh -p 2222` or `charly shell`.
+            
+            > **Location:** lives in the **`opencharly/distro-fedora`** repo (git submodule at
+            > **`box/fedora`**), discovered as a `box/<name>/charly.yml` box. Its base
+            > stack (`fedora-nonfree` → `fedora`) is bare-local in the same self-contained
+            > submodule (`import: []`) — `base: fedora-nonfree`, which itself roots on the
+            > bare-local `fedora` base — and its candies are pulled by github reference.
+            > Build/validate from
+            > the submodule: `charly -C box/fedora box build fedora-coder`, or
+            > `charly --repo opencharly/distro-fedora box build fedora-coder`. Deploy-mode verbs
+            > (`charly config`/`charly start`/`charly check box`) read the built image's OCI labels and
+            > work from anywhere once it's in local storage.
+            
+            ## Definition
+            
+            ```yaml
+            fedora-coder:
+              base: fedora-nonfree            # = fedora + rpmfusion (for x264/ffmpeg-devel)
+              ports:
+                - "2222:2222"                 # sshd-wrapper
+                - "18765:18765"               # charly-mcp (Streamable HTTP)
+              candy:
+                # Baseline (matches the charly-cachyos power-user pattern)
+                - agent-forwarding
+                - sshd
+                - charly                          # the full toolchain: charly binary + virtualization + gocryptfs + socat
+                - charly-mcp                      # MCP gateway for the entire charly CLI
+                - container-nesting           # rootless nested podman/buildah/skopeo
+                - '@github.com/opencharly/pod-dbus'
+                - '@github.com/opencharly/layer-tmux'
+            
+                # Language runtimes + managers
+                - language-runtimes           # Go + PHP + .NET 9 + nodejs-devel + python3-devel
+                - '@github.com/opencharly/layer-golang'
+                - '@github.com/opencharly/layer-nodejs'  # generic nodejs candy (Node 22 on Fedora)
+                - rust
+                - pixi
+                - uv                          # direct-download binary (no pixi env)
+            
+                # Build + developer tooling
+                - build-toolchain
+                - dev-tools                   # ripgrep, bat, fd, neovim, htop, …
+                - pre-commit
+                - direnv
+                - gh                          # GitHub CLI + git + git-lfs (single-responsibility)
+                - typst
+                - asciinema
+            
+                # AI coding CLIs
+                - claude-code
+                - codex
+                - '@github.com/opencharly/layer-gemini'
+                - forgecode                   # 5th CLI (astral-sh-style)
+                - oracle
+            
+                # DevOps / cloud / infra
+                - devops-tools                # AWS, Scaleway, kubectx/kubens, OpenTofu
+                - kubernetes                  # kubectl, helm, k3d
+                - docker-ce
+                - github-actions              # act, actionlint
+                - google-cloud
+                - google-cloud-npm            # firebase npm bindings (Gemini CLI comes from the gemini candy)
+                - grafana-tools
+            ```
+            
+            Network: default `charly` bridge. The `port:` mapping is the right way to expose
+            sshd/charly-mcp, and bridge networking lets dev boxes coexist on one host via
+            normal `-p host:container` remapping (e.g. running `arch-coder` alongside
+            `fedora-coder` on the same machine).
+            
+            No `uid:` / `gid:` / `user:` / `security:` override — inherits
+            `1000/1000/user` from `defaults` and the candy-level security from
+            `/charly-distros:container-nesting`. Rootless-first by design (shares this
+            posture with `/charly-openclaw:openclaw-desktop`).
+            
+            ## Resolved security posture (OCI label)
+            
+            | Field | Value | Source |
+            |---|---|---|
+            | `cap_add` | **(empty)** | — |
+            | `security_opt` | `[unmask=/proc/*]` | `/charly-distros:container-nesting` |
+            | `devices` | `[/dev/fuse, /dev/net/tun]` | `/charly-distros:container-nesting` |
+            | `privileged` | `false` | — |
+            | Network | default `charly` bridge | charly.yml |
+            | UID / user | `1000 / user` | defaults |
+            | sudo | passwordless via `/etc/sudoers.d/charly-user` | `/charly-coder:sshd` |
+            
+            **No `--privileged`. No `cap_add: ALL`. No `seccomp=unconfined`. No
+            `label=disable`.** All four power-user boxes (`fedora-coder`, `charly-fedora`,
+            `charly-arch`, `githubrunner`) run the rootless posture proven sufficient by the
+            `container-nesting` kernel RCA — see `/charly-distros:container-nesting` for the
+            `mount_too_revealing()` + `unmask=/proc/*` derivation.
+            
+            ## Network posture
+            
+            Default `charly` bridge. Bridge networking plus normal `-p host:container`
+            remapping is the right pattern for dev boxes — it lets `fedora-coder` run
+            alongside `/charly-coder:arch-coder` on the same host (both want sshd on 2222 and
+            charly-mcp on 18765). To run two dev boxes side by side:
+            
+            ```bash
+            charly config arch-coder -p 2223:2222 -p 18766:18765     # alt-instance ports
+            charly config fedora-coder                               # canonical 2222/18765
+            ```
+            
+            Reaching host services from inside a bridge-networked container: use
+            the host's LAN IP or `host.containers.internal` (podman) rather than
+            `127.0.0.1`. For selkies-style sibling-container discovery, the charly.yml
+            `provides.env:` and `CHARLY_MCP_SERVERS` auto-injection give explicit hostnames.
+            
+            ## The 32-layer composition explained
+            
+            **Why `fedora-nonfree` (not plain `fedora`)** — `build-toolchain` pulls
+            `x264-devel` + `ffmpeg-devel`, both of which live in RPM Fusion. Every
+            box that uses `build-toolchain` either bases on `fedora-nonfree` or
+            includes `rpmfusion` explicitly.
+            
+            **Python story** — `python` (the pixi-python charly-layer) is NOT pulled in.
+            `supervisord`, `language-runtimes`, and `uv` all use system python3 from RPM,
+            not the conda-forge pixi env, so none of them declares `require: python`.
+            System Python is available via `language-runtimes` (`python3-devel` +
+            `python3-ramalama`). See the "Key Rules" note in the project rulebook (`AGENTS.md` / `CLAUDE.md`) ("don't declare
+            defensive deps").
+            
+            **`uv` is a direct-download binary** (no pixi involvement). Lives at
+            `/usr/local/bin/uv` and `/usr/local/bin/uvx`, extracted from the
+            upstream astral-sh/uv tarball via the `download:` verb's
+            `strip_components: 1` modifier. See `/charly-coder:uv` and `/charly-image:layer`.
+            
+            **`gh` owns all git tooling** — the `gh` candy installs `gh` + `git` +
+            `git-lfs` (with the noscripts + post-install trigger). `dev-tools`
+            intentionally does NOT install any of these. See `/charly-coder:gh`.
+            
+            **No GPU by default** — `nvidia` / `cuda` intentionally NOT composed. If
+            you need CUDA in your dev box, spin a sibling `fedora-coder-nvidia`
+            with `base: nvidia` + the same candy list.
+            
+            ## Verification recipe (build + test + deploy-test)
+            
+            ```bash
+            # 1. Validate config (from the opencharly/distro-fedora submodule)
+            charly -C box/fedora box validate
+            
+            # 2. Build (first time ≈ 15–30 min; cached rebuilds are fast thanks to
+            # LABEL-at-end ordering — test edits rebuild in seconds)
+            charly -C box/fedora box build fedora-coder
+            
+            # 3. Build-scope tests (disposable container)
+            charly check box ghcr.io/opencharly/fedora-coder:latest
+            # target: 149 passed · 0 failed · 0 skipped
+            
+            # 4. Deploy (no bind-mount needed; charly-mcp auto-falls back to opencharly/charly)
+            charly config fedora-coder
+            charly start fedora-coder
+            
+            # 5. Full-scope tests — prefers the running container automatically
+            # (see /charly-check:check "Live vs disposable executor selection")
+            charly check box ghcr.io/opencharly/fedora-coder:latest
+            # target: 167 passed · 0 failed · 0 skipped
+            
+            # 6. Clean up
+            charly stop fedora-coder
+            ```
+            
+            If you want `box.list.boxes` over the MCP surface to list YOUR
+            local checkout's boxes (rather than upstream opencharly/charly),
+            bind-mount the project:
+            
+            ```bash
+            charly config fedora-coder --bind project=/home/you/opencharly
+            charly start fedora-coder
+            ```
+            
+            The volume NAME is `project` (stable bind-mount API); the in-container
+            mount path is `/workspace`. See `/charly-coder:charly-mcp` for the three
+            deployment patterns (bind-mount / `CHARLY_PROJECT_REPO` / auto-fallback).
+            
+            ## Ports
+            
+            | Port | Service | Bound by |
+            |---|---|---|
+            | 2222 | sshd-wrapper (SSH access as user with sudo) | `/charly-coder:sshd` |
+            | 18765 | charly-mcp (entire `charly` CLI as MCP tools, Streamable HTTP) | `/charly-coder:charly-mcp` |
+            
+            Conflicts with `/charly-coder:charly-arch` (identical ports) and several
+            selkies-desktop variants on 2222. Use `-i <instance>` or `-p <remap>`
+            if running alongside.
+            
+            ## Test results
+            
+            - `charly check box fedora-coder` — **149 passed · 0 failed · 0 skipped**.
+            - `charly check box fedora-coder` against a live running
+              container — **167 passed · 0 failed · 0 skipped** (adds deploy-scope:
+              sshd reachable, supervisord responding, dbus+charly-mcp+virtqemud+
+              virtnetworkd services running, libvirt session list + KVM domcaps,
+              mcp ping/list-tools/call-version/call-list-images via the charly-mcp
+              auto-fallback).
+            
+            ## Image size
+            
+            ~14 GB uncompressed (kitchen-sink trade-off). Dominated by:
+            
+            - `virtualization` — QEMU + libvirt (~800 MB)
+            - `docker-ce` — Docker engine + containerd + buildx + compose (~500 MB)
+            - 5 AI coding CLIs — `forgecode` alone is ~370 MB (native binary); the
+              JS-only ones are smaller.
+            - `grafana-tools` — 7 binaries fetched from GitHub releases (~200 MB)
+            - `language-runtimes` — .NET 9 SDK is ~600 MB on its own.
+            
+            To slim: drop the candy groups you don't need (AI CLIs, kubernetes,
+            google-cloud-npm) by forking charly.yml. See `/charly-image:image` for authoring.
+            
+            ## Key Candies
+            
+            - `/charly-tools:charly` — the full toolchain: charly binary + virtualization + gocryptfs + socat (+ podman-machine, gvisor-tap-vsock for nested VMs)
+            - `/charly-coder:charly-mcp` — MCP gateway; auto-falls back to `opencharly/charly` when no bind-mount present
+            - `/charly-distros:container-nesting` — rootless nested podman recipe (authoritative RCA for `mount_too_revealing()` + `unmask=/proc/*`)
+            - `/charly-coder:sshd` — SSH daemon + passwordless sudo for the `user` account
+            - `/charly-coder:forgecode` — the 5th AI coding CLI
+            - `/charly-coder:language-runtimes` — Go + PHP + .NET + nodejs-devel + python3-devel (system-python stack, no pixi)
+            - `/charly-coder:uv` — direct-download binary at /usr/local/bin/uv
+            - `/charly-coder:gh` — GitHub CLI + git + git-lfs (single-responsibility)
+            
+            ## Cross-distro siblings
+            
+            `fedora-coder` is one of the **cross-distro coder boxes** that share the identical `check:` block + a large set of identical candies; they diverge only in each candy's package-format section (`rpm:` / `pac:` / `deb:`) and a handful of distro-specific quirks handled inside individual candies.
+            
+            | Box | Base | Package mgr | User model |
+            |---|---|---|---|
+            | `/charly-coder:fedora-coder` | `fedora-nonfree` (Fedora 43) | rpm | `user:user` (create) |
+            | `/charly-coder:arch-coder` | `arch` | pac + aur | `user:user` (create) |
+            | `/charly-coder:debian-coder` | `debian:13` | deb | `user:user` (create) |
+            | `/charly-coder:ubuntu-coder` | `ubuntu:24.04` | deb | `user:ubuntu` (**adopt** from base) |
+            
+            All four produce the same daily-dev surface (sshd on 2222, charly-mcp on 18765, AI CLIs, full language runtimes, DevOps tooling). Pick based on distro-family alignment with your team/CI. See `/charly-image:image` "user_policy" for the adopt-vs-create reconciliation that gives ubuntu-coder its `ubuntu` username.
+            
+            ## Related Boxes
+            
+            - `/charly-openclaw:openclaw-desktop` — sibling rootless-first power-user box; same security posture + container-nesting, but adds the streaming desktop. Prefer when you want browser-accessible GUI + dev tools.
+            - `/charly-distros:charly-fedora` — minimal charly toolchain (no coding CLIs, no DevOps), also uid=1000 with sudo.
+            - `/charly-coder:charly-arch` — Arch Linux counterpart of charly-fedora.
+            - `/charly-distros:githubrunner` — self-hosted GitHub Actions runner; same uid=1000 posture.
+            - `/charly-hermes:hermes` — adds the Hermes AI agent daemon on top of the AI CLIs; prefer when you want an agent, not just CLI tools.
+            
+            ## Related Commands
+            
+            - `/charly-core:shell` — open an interactive shell inside the container (as user, with sudo)
+            - `/charly-core:charly-config` — deploy setup (--bind project=…, tunnel, --update-all)
+            - `/charly-core:start`, `/charly-core:stop` — lifecycle
+            - `/charly-check:check` — live-service tests (`charly check live <name>`) and build-scope tests (`charly check box <ref>`)
+            - `/charly-build:charly-mcp-cmd` — MCP gateway documentation; `--no-default-repo` to disable auto-fallback
+            - `/charly-vm:vm` — nested libvirt VMs (via virtqemud inside the container)
+            - `/charly-image:layer` — authoring reference (covers the new `strip_components:` modifier)
+            
+            ## When to Use This Skill
+            
+            **MUST be invoked** when the task involves:
+            
+            - Building, deploying, or troubleshooting the `fedora-coder` box.
+            - Picking the right power-user base image for a coding/dev workload (this
+              vs. `charly-fedora` vs. `charly-arch` vs. `openclaw-desktop`).
+            - Understanding the rootless-first architectural pattern shared by the
+              four power-user boxes (kernel RCA belongs in
+              `/charly-distros:container-nesting`; the composition that proves it works
+              without a GUI is here).
+            - The full MCP auto-fallback deployment pattern when the `/workspace`
+              bind-mount is intentionally left empty.
+            
+            ## Related
+            
+            - `/charly-build:build` — the embedded build vocabulary (distros, builders, init-systems)
+
+fedora-nonfree-skill:
+    skill:
+        name: fedora-nonfree
+        family: distros
+        owner: fedora-nonfree
+        description: |-
+            Fedora with RPM Fusion non-free repositories enabled. Base for boxes
+            needing codec or proprietary package support like immich.
+            MUST be invoked before building, deploying, configuring, or troubleshooting the fedora-nonfree box.
+        triggers:
+            - "Fedora images / `fedora*` / `box/fedora` submodule (incl. the GPU base `nvidia` / `python-ml` + `sway-browser-vnc`)"
+        content: |
+            # fedora-nonfree
+            
+            Fedora base with RPM Fusion free and non-free repositories enabled.
+            
+            **Owned by the `opencharly/distro-fedora` submodule.** Lives bare-local in the
+            **`opencharly/distro-fedora`** submodule (mounted at `box/fedora`), alongside
+            `/charly-distros:fedora` + `/charly-distros:fedora-builder`; the submodule is
+            SELF-CONTAINED (`import: []`). Its consumers (`/charly-immich:immich`,
+            `/charly-distros:nvidia`) live in the same submodule and base on it as a
+            bare-local `fedora-nonfree`. Its `rpmfusion`
+            candy is pinned as a github ref so the same definition resolves in both main and
+            the submodule.
+            
+            ## Box Properties
+            
+            | Property | Value |
+            |----------|-------|
+            | Base | fedora |
+            | Layers | rpmfusion |
+            | Platforms | linux/amd64 |
+            | Registry | ghcr.io/opencharly |
+            
+            ## Full Candy Stack
+            
+            1. `fedora` (quay.io/fedora/fedora:43)
+            2. `rpmfusion` — RPM Fusion free + non-free repos
+            
+            ## Quick Start
+            
+            ```bash
+            charly box build fedora-nonfree
+            charly shell fedora-nonfree
+            ```
+            
+            ## Key Candies
+            
+            - `/charly-distros:rpmfusion` — RPM Fusion repository configuration
+            
+            ## Derived Boxes
+            
+            - `/charly-immich:immich` — photo management with codec support
+            
+            ## Related Boxes
+            
+            - `/charly-distros:fedora` — parent base (without non-free repos)
+            
+            ## Verification
+            
+            After `charly box build`:
+            - `charly box list` — box appears in list
+            - `charly shell fedora-nonfree` — interactive shell works
+            
+            ## When to Use This Skill
+            
+            **MUST be invoked** when the task involves the fedora-nonfree box, RPM Fusion support, or non-free codec packages. Invoke this skill BEFORE reading source code or launching Explore agents.
+            
+            ## Related
+            
+            - `/charly-image:image` — image family umbrella (`candy:` image entries — those carrying `base:`/`from:` — in `charly.yml`, build/validate/inspect/list)
+            - `/charly-build:build` — the embedded build vocabulary (distros, builders, init-systems)
+
+fedora-skill:
+    skill:
+        name: fedora
+        family: distros
+        owner: fedora
+        description: |-
+            Base Fedora 43 image. Root of the box hierarchy for all RPM-based boxes.
+            MUST be invoked before building, deploying, configuring, or troubleshooting the fedora box.
+        triggers:
+            - "Fedora images / `fedora*` / `box/fedora` submodule (incl. the GPU base `nvidia` / `python-ml` + `sway-browser-vnc`)"
+        content: |
+            # fedora
+            
+            Root base image built from `quay.io/fedora/fedora:43`. Foundation for all RPM-based OpenCharly boxes.
+            
+            **Owned by the `opencharly/distro-fedora` submodule.** The Fedora base stack —
+            `fedora`, `/charly-distros:fedora-builder`, `/charly-distros:fedora-nonfree` — lives
+            bare-local in the **`opencharly/distro-fedora`** submodule (mounted at `box/fedora`),
+            which is SELF-CONTAINED (`import: []`): the base stack is bare-local and the
+            submodule composes the main repo's shared candies by `@github` git reference. Its
+            boxes write `base: fedora` and route builders to `fedora-builder` (bare-local
+            refs, no namespace qualifier). The Fedora consumer showcase boxes
+            (`/charly-coder:fedora-coder`, `/charly-distros:charly-fedora`, `/charly-distros:fedora-test`)
+            and the Fedora-rooted pod families all live in the same submodule, discovered as
+            `box/<name>/charly.yml` boxes. The main repo imports this submodule under the
+            `fedora` namespace (one-directional — fedora imports nothing back) to reference
+            those relocated boxes. Build with `charly box build fedora` from the submodule
+            (or `charly -C box/fedora box build fedora`).
+            
+            ## Box Properties
+            
+            | Property | Value |
+            |----------|-------|
+            | Base | quay.io/fedora/fedora:43 |
+            | Layers | (none) |
+            | Platforms | linux/amd64 |
+            | Pkg | rpm |
+            | Registry | ghcr.io/opencharly |
+            
+            ## Quick Start
+            
+            ```bash
+            charly box build fedora
+            charly shell fedora
+            ```
+            
+            ## dnf download tuning (`distro.fedora.dnf`)
+            
+            The embedded `distro.fedora.dnf` vocabulary writes dnf download-speed knobs to
+            `/etc/dnf/dnf.conf` during the bootstrap, so they apply to the bootstrap install
+            AND every per-layer dnf install in this box and its descendants:
+            
+            ```yaml
+            # charly/charly.yml (embedded build vocabulary)
+            distro:
+              fedora:
+                dnf:
+                  max_parallel_downloads: 10   # concurrent package downloads
+                  fastestmirror: true          # sort mirrors by measured speed
+            ```
+            
+            These are **speed-only** — they never change which packages are selected
+            (`install_weak_deps` stays on the bootstrap `install_cmd`'s
+            `--setopt=install_weak_deps=False`). The block is a `DnfConfig` on `DistroDef`
+            and inherits across distro inheritance like the other sub-blocks. Source:
+            `sdk/deploykit/bootstrap.go:RenderDnfConfWrite` (the former `charly/generate.go` is DELETED, K-wave 2).
+            
+            ## Derived Boxes
+            
+            - `/charly-distros:fedora-nonfree` — adds RPM Fusion repos
+            - `/charly-distros:fedora-builder` — adds pixi, nodejs, build-toolchain
+            - `/charly-distros:nvidia` — adds CUDA toolkit
+            - `/charly-openclaw:openclaw` — adds OpenClaw gateway
+            - `/charly-distros:githubrunner` — adds GitHub Actions runner
+            
+            ## Verification
+            
+            After `charly box build`:
+            - `charly box list` — box appears in list
+            - `charly shell fedora` — interactive shell works
+            
+            ## Related Boxes
+            - `/charly-distros:fedora-nonfree` — adds RPM Fusion repos
+            - `/charly-distros:fedora-builder` — adds pixi, nodejs, build-toolchain
+            - `/charly-distros:charly-fedora` — full charly toolchain on Fedora
+            - `/charly-distros:arch` — pacman-based counterpart base
+            
+            ## Related Commands
+            - `/charly-build:build` — build the fedora base image
+            - `/charly-core:shell` — interactive shell in the base image
+            
+            ## When to Use This Skill
+            
+            **MUST be invoked** when the task involves the fedora base image or understanding the box chain. Invoke this skill BEFORE reading source code or launching Explore agents.
+            
+            ## Related
+            
+            - `/charly-image:image` — image family umbrella (`candy:` image entries — those carrying `base:`/`from:` — in `charly.yml`, build/validate/inspect/list)
+
+fedora-test-skill:
+    skill:
+        name: fedora-test
+        family: distros
+        owner: fedora-test
+        description: |-
+            Test box with Traefik reverse proxy and testapi service.
+            Currently disabled. Used for development testing.
+            MUST be invoked before building or troubleshooting the fedora-test box.
+        triggers:
+            - "Fedora images / `fedora*` / `box/fedora` submodule (incl. the GPU base `nvidia` / `python-ml` + `sway-browser-vnc`)"
+        content: |
+            # fedora-test
+            
+            Development test box with Traefik reverse proxy and a FastAPI test service.
+            
+            Lives in the **`opencharly/distro-fedora`** repo (git submodule at **`box/fedora`**).
+            Its `fedora` base is bare-local in the same self-contained submodule
+            (`import: []`) — `base: fedora`; the
+            `agent-forwarding`/`traefik`/`testapi` candies are pulled by github reference.
+            Build from the submodule: `charly -C box/fedora box build fedora-test`.
+            
+            ## Box Properties
+            
+            | Property | Value |
+            |----------|-------|
+            | Base | fedora |
+            | Layers | agent-forwarding, traefik, testapi |
+            | Platforms | linux/amd64, linux/arm64 |
+            | Ports | 8000 (Traefik HTTP), 8080 (Traefik dashboard) |
+            | Status | enabled |
+            
+            ## Purpose
+            
+            Used for testing Traefik routing, service health checks, and the `testapi` candy. The testapi service runs on port 9090 and is routed via `testapi.localhost` through Traefik.
+            
+            ## Key Candies
+            
+            - `/charly-infrastructure:traefik` — Reverse proxy
+            - `/charly-infrastructure:testapi` — FastAPI test service
+            
+            ## Related Boxes
+            - `/charly-distros:fedora` — parent base image
+            - `/charly-distros:valkey-test` — sibling test box (disabled)
+            
+            ## Related Commands
+            - `/charly-build:build` — build the fedora-test box
+            - `/charly-build:validate` — validate the test candy composition
+            
+            ## When to Use This Skill
+            
+            **MUST be invoked** when the task involves the fedora-test box or Traefik routing validation.
+            
+            ## Related
+            
+            - `/charly-image:image` — image family umbrella (`candy:` image entries — those carrying `base:`/`from:` — in `charly.yml`, build/validate/inspect/list)
+
+jupyter-ml-notebook-skill:
+    skill:
+        name: jupyter-ml-notebook
+        family: jupyter
+        owner: jupyter-ml-notebook
+        description: |-
+            Full CUDA ML JupyterLab box with finetuning, Ollama, and LLM course notebooks, CRDT MCP server, and real-time collaboration.
+            Base: nvidia. Port 8888. Combines jupyter-ml with 37 Unsloth fine-tuning notebooks, 6 Ollama integration notebooks, and 15 LLM course notebooks.
+            MUST be invoked before building, deploying, or troubleshooting the jupyter-ml-notebook box.
+        content: |-
+            # jupyter-ml-notebook -- GPU ML Jupyter with Fine-tuning Notebooks
+            
+            ## Box Definition
+            
+            ```yaml
+            jupyter-ml-notebook:
+              base: nvidia
+              candy:
+                - agent-forwarding
+                - jupyter-ml
+                - notebook-templates
+                - notebook-finetuning
+                - notebook-ollama
+                - notebook-llm-on-supercomputers
+                - notebook-openrouter
+                - '@github.com/opencharly/pod-dbus'
+                - charly
+              ports:
+                - "8888:8888"
+              platforms:
+                - linux/amd64
+            ```
+            
+            ## What's Different from jupyter-ml
+            
+            This box is identical to `jupyter-ml` with two data candy additions:
+            - `notebook-finetuning` — seeds 37 Unsloth fine-tuning notebooks into `/workspace/finetuning/`
+            - `notebook-ollama` — seeds 6 Ollama integration notebooks into `/workspace/ollama/`
+            
+            The Ollama notebooks require a running `ollama` deployment. When deployed via `charly config ollama --update-all`, the `OLLAMA_HOST` env var is automatically injected via `env_provide` -- no manual configuration needed.
+            
+            ## Candy Composition
+            
+            - `jupyter-ml` — Tier 2 environment-owning meta-layer (PyTorch >= 2.10.0, vLLM 0.19, unsloth, LangChain, CRDT MCP via jupyter-mcp sub-candy)
+            - `notebook-templates` — Starter notebooks (data candy, seeds /workspace)
+            - `notebook-finetuning` — 37 Unsloth fine-tuning notebooks (data candy, seeds /workspace/finetuning/)
+            - `notebook-ollama` — 6 Ollama integration notebooks (data candy, seeds /workspace/ollama/)
+            - `notebook-llm-on-supercomputers` — 15 LLM course notebooks (data candy, seeds /workspace/llms_on_supercomputers/)
+            - `agent-forwarding` — SSH/GPG agent forwarding
+            - `dbus` — D-Bus session bus
+            - `charly` — OpenCharly CLI
+            
+            ## Ports
+            
+            | Port | Service |
+            |------|---------|
+            | 8888 | JupyterLab + MCP endpoint at `/mcp` |
+            
+            ## Volumes
+            
+            | Name | Path | Purpose |
+            |------|------|---------|
+            | workspace | /workspace | Persistent notebook storage |
+            | models | ~/.cache/huggingface | HuggingFace model cache (from unsloth sub-candy) |
+            
+            ## Data Candies
+            
+            | Candy | Target | Dest | Contents |
+            |-------|--------|------|----------|
+            | notebook-templates | workspace | *(root)* | getting-started.ipynb |
+            | notebook-finetuning | workspace | finetuning/ | 37 Unsloth notebooks (SFT, GRPO, DPO, RLOO, QLoRA) |
+            | notebook-ollama | workspace | ollama/ | 6 Ollama API notebooks (requests, OpenAI, ollama lib, GPU, HuggingFace, Anthropic) |
+            | notebook-llm-on-supercomputers | workspace | llms_on_supercomputers/ | 15 LLM course notebooks (prompt engineering, RAG, fine-tuning) + datasets |
+            
+            ## File Layout in JupyterLab
+            
+            ```
+            /workspace/
+              getting-started.ipynb                    (from notebook-templates)
+              finetuning/                               (from notebook-finetuning)
+                .env.example
+                notebooks.yaml
+                00_Unsloth_Setup.ipynb
+                01_FastInference_Llama.ipynb
+                01_FastInference_Qwen.ipynb
+                02_Vision_Training_Ministral.ipynb
+                03_SFT_Training_Qwen.ipynb
+                04_GRPO_Training_Qwen.ipynb
+                05_DPO_Training_Qwen.ipynb
+                06_Reward_Training_Qwen.ipynb
+                07_RLOO_Training_Qwen.ipynb
+                08_QLoRA_Alpha_Scaling_Ministral.ipynb
+                ... (37 notebooks total)
+              ollama/                                   (from notebook-ollama)
+                notebooks.yaml
+                00_Ollama_Requests.ipynb
+                01_Ollama_GPU.ipynb
+                02_Ollama_OpenAI.ipynb
+                03_Ollama_Library.ipynb
+                04_Ollama_HuggingFace.ipynb
+                05_Ollama_Anthropic.ipynb
+              llms_on_supercomputers/                   (from notebook-llm-on-supercomputers)
+                notebooks.yaml
+                datasets/
+                D0_00_Bazzite_Setup.ipynb
+                D1_01_Prompting_with_LangChain.ipynb
+                D1_02_Prompt_templates_and_parsing.ipynb
+                ... (15 notebooks total)
+            ```
+            
+            ## Service Environment Integration
+            
+            This box is a **consumer** of env_provide variables from infrastructure candies:
+            
+            | Variable | Injected by | Value |
+            |----------|------------|-------|
+            | `OLLAMA_HOST` | `/charly-ollama:ollama` | `http://charly-ollama:11434` |
+            
+            The notebooks read `OLLAMA_HOST` via `os.getenv("OLLAMA_HOST", "http://localhost:11434")`. When ollama is deployed via `charly config ollama --update-all`, the env_provide mechanism overrides the localhost default automatically.
+            
+            ## Quick Start
+            
+            ```bash
+            charly box build jupyter-ml-notebook
+            charly config jupyter-ml-notebook
+            charly start jupyter-ml-notebook
+            charly status jupyter-ml-notebook
+            charly logs jupyter-ml-notebook -f
+            # JupyterLab: http://localhost:8888
+            # MCP endpoint: http://localhost:8888/mcp
+            
+            # With bind-backed workspace (data seeded into local dir):
+            charly config jupyter-ml-notebook --bind workspace=/path/to/project
+            ```
+            
+            ## Notebook Workarounds
+            
+            The notebook-finetuning include compatibility fixes for current library versions:
+            - **flex_attention disabled** in Ministral/Pixtral notebooks (transformers 5.5 bug)
+            - **max_memory={0: "14GB"}** for Pixtral-12B notebooks (accelerate device_map estimation fix)
+            - **packing=True** in all SFTConfig cells (TRL 1.0 requirement)
+            - **max_prompt_length removed** from DPO notebooks (deprecated in TRL 1.0)
+            
+            ## Verify
+            
+            ```bash
+            charly shell jupyter-ml-notebook -c "pixi run verify-pytorch"
+            charly shell jupyter-ml-notebook -c "pixi run verify-unsloth"
+            charly shell jupyter-ml-notebook -c "pixi run verify-mcp"
+            charly shell jupyter-ml-notebook -c "ls /workspace/finetuning/"
+            charly shell jupyter-ml-notebook -c "ls /workspace/ollama/"
+            charly shell jupyter-ml-notebook -c "ls /workspace/llms_on_supercomputers/"
+            ```
+            
+            ## Related Boxes
+            
+            - `/charly-jupyter:jupyter-ml` — Same stack without finetuning notebooks
+            - `/charly-jupyter:jupyter` — Lightweight variant (no CUDA, multi-arch)
+            - `/charly-jupyter:unsloth-studio` — Unsloth Studio UI (different pixi env, same finetuning notebooks)
+            
+            **MCP testing:** same 3 deploy-scope `mcp:` checks as `jupyter-ml` are inherited here. See `/charly-build:charly-mcp-cmd` for the verb reference.
+            
+            ## When to Use This Skill
+            
+            MUST be invoked before building, deploying, configuring, or troubleshooting the jupyter-ml-notebook box.
+            
+            ## Related
+            
+            - `/charly-image:image` — image family umbrella (`candy:` image entries — those carrying `base:`/`from:` — in `charly.yml`, build/validate/inspect/list)
+            - `/charly-build:build` — the embedded build vocabulary (distros, builders, init-systems)
+
+sway-browser-vnc-skill:
+    skill:
+        name: sway-browser-vnc
+        family: selkies
+        owner: sway-browser-vnc
+        description: |-
+            Minimal Sway desktop with VNC remote access and Chrome browser.
+            Use when working with VNC desktop containers or testing the sway-desktop-vnc composition.
+        content: |-
+            # sway-browser-vnc
+            
+            Minimal Sway desktop with VNC (wayvnc on port 5900) and Chrome (CDP on port 9222).
+            
+            ## Box Properties
+            
+            | Property | Value |
+            |----------|-------|
+            | Base | fedora |
+            | Candies | agent-forwarding, sway-desktop-vnc, dbus, charly |
+            | Ports | 5900, 9222, 9224 |
+            
+            ## Quick Start
+            
+            ```bash
+            charly box build sway-browser-vnc
+            charly start sway-browser-vnc
+            charly status sway-browser-vnc          # Shows all probes: supervisord, cdp, dbus, charly, sway, vnc, wl
+            charly check live sway-browser-vnc --filter vnc   # run the candy's vnc: status / screenshot steps
+            charly check live sway-browser-vnc --filter wl    # desktop screenshot via the wl: screenshot step
+            ```
+            
+            ## D-Bus and Notification Support
+            
+            This box includes the `dbus` candy (D-Bus session bus) plus the `charly` candy, enabling:
+            - the `dbus:` check verb (`notify`/`list`/`call`/`introspect`) — D-Bus interaction served out-of-process by `candy/plugin-dbus`, driving the session bus with `gdbus`
+            - `charly cmd` — single command execution with desktop notification on completion
+            - `charly agent terminal` — typed persistent TTY sessions, input, snapshots, and transcripts
+            - `charly status` — supervisord, dbus, and charly probes
+            
+            ```yaml
+            # author dbus: steps in the plan, run with: charly check live sway-browser-vnc --filter dbus
+            notify-build-done:
+                check: a desktop notification is delivered
+                dbus: notify
+                context: [deploy]
+                text: Build Complete
+                description: Image built successfully
+            list-services:
+                check: the notifications service is on the session bus
+                dbus: list
+                context: [deploy]
+                stdout:
+                    contains: org.freedesktop.Notifications
+            ```
+            ```bash
+            charly cmd sway-browser-vnc "make test"    # Notifies on completion (gdbus, host-side)
+            ```
+            
+            The notification daemon (swaync) is included via the sway-desktop metalayer.
+            
+            ## Overlays
+            
+            Fullscreen overlays for recording (via wl-overlay, included in sway-desktop):
+            
+            ```yaml
+            # author overlay steps in the plan, run with: charly check live sway-browser-vnc --filter wl
+            show-title:
+                check: a fullscreen title card is shown
+                wl: overlay-show
+                context: [deploy]
+                type: text
+                text: INTRO
+                name: title
+            show-lower-third:
+                check: a lower-third is shown
+                wl: overlay-show
+                context: [deploy]
+                type: lower-third
+                text: Speaker
+                subtitle: Role
+                name: lt
+            show-countdown:
+                check: a 3-second countdown is shown
+                wl: overlay-show
+                context: [deploy]
+                type: countdown
+                seconds: 3
+                name: cd
+            show-highlight:
+                check: a highlight region is shown
+                wl: overlay-show
+                context: [deploy]
+                type: highlight
+                region: "430,290,510,50"
+                name: hl
+            show-fade:
+                check: a fade-to-black outro is shown
+                wl: overlay-show
+                context: [deploy]
+                type: fade
+                color: black
+                name: outro
+            hide-all:
+                check: all overlays are hidden
+                wl: overlay-hide
+                context: [deploy]
+                all: true
+            ```
+            
+            All overlay types render with true RGBA compositor transparency. See `/charly-check:wl-overlay` for the full recording workflow.
+            
+            ## Recording
+            
+            Desktop video recording via wf-recorder (included in sway-desktop) is authored as
+            `record:` plan steps (the declarative verb served out-of-process by `candy/plugin-record`)
+            and run with `charly check live sway-browser-vnc --filter record`:
+            
+            ```yaml
+            sway-rec-start:
+                check: a desktop recording starts
+                record: start
+                context: [deploy]
+                record_name: demo
+                record_mode: desktop
+            sway-rec-stop:
+                check: the desktop recording is captured
+                record: stop
+                context: [deploy]
+                record_name: demo
+                artifact: demo.mp4
+            ```
+            
+            ## Use as Selkies Remote Desktop Client
+            
+            sway-browser-vnc can act as a test client for selkies-desktop, simulating how a real user would connect via browser:
+            
+            ```bash
+            # Both containers must be running on the charly bridge network
+            charly start sway-browser-vnc
+            charly start selkies-desktop
+            
+            # Open selkies URL in sway-browser-vnc's Chrome via a cdp: open step
+            # (the cdp: verb is served out-of-process by candy/plugin-cdp):
+            #   cdp: open  url: https://charly-selkies-desktop:3000
+            # Run with: charly check live sway-browser-vnc --filter cdp
+            
+            # Interact with the remote desktop:
+            # Mouse: cdp: spa-click on the Selkies tab (with ~0.82x coordinate scaling)
+            # Keyboard: a vnc: type step (passthrough via SPA's overlayInput)
+            # Screenshots: a vnc: screenshot step (shows full client desktop with stream)
+            #              a cdp: screenshot step (shows only the stream content)
+            ```
+            
+            **Key limitations when using as a client:**
+            - Super key consumed by sway (can't trigger remote labwc keybinds like Super+e)
+            - Ctrl+T/W consumed by local Chrome (open/close tabs locally, not remotely)
+            - Clipboard permission dialog appears on first connection — dismiss with a `vnc: key` step (`key: Return`) or CDP `Browser.grantPermissions`
+            
+            See `/charly-selkies:selkies-labwc` for detailed SPA interaction documentation.
+            
+            ## Test Coverage
+            
+            Latest `charly check live sway-browser-vnc` run: **84 passed, 0 failed, 1 skipped**
+            (`chrome-devtools-mcp-port` references `${HOST_PORT:9224}` which isn't
+            mapped here — correct skip behavior).
+            
+            Covers all the transitive candies: wayvnc (VNC), sway (compositor),
+            chrome-sway, xdg-portal, waybar, swaync, pavucontrol, thunar,
+            xfce4-terminal, pipewire, wl-screenshot-grim, wl-overlay, wf-recorder,
+            desktop-fonts, fastfetch, asciinema, tmux, dbus, charly. Deploy-scope: VNC
+            port 5900 reachable, Chrome CDP on port 9250→9222 with `/json/version`
+            200. Box-scope: sway + wayvnc both RUNNING under supervisord.
+            
+            ## Related Skills
+            
+            - `/charly-selkies:sway-desktop-vnc`, `/charly-selkies:sway`, `/charly-selkies:wayvnc`,
+              `/charly-selkies:chrome-sway`, `/charly-selkies:xdg-portal`, `/charly-infrastructure:dbus-layer`,
+              `/charly-tools:charly`, `/charly-distros:agent-forwarding`
+            - `/charly-check:check` — declarative testing framework (parent router for the out-of-process live-container check verbs `wl:`/`cdp:`/`vnc:`/`mcp:`/`dbus:`)
+            - `/charly-check:vnc` — VNC automation on this box
+            - `/charly-check:cdp` — Chrome automation (CDP on host port 9250)
+            - `/charly-check:wl` — Wayland input/windows/clipboard (sway subgroup for compositor control)
+            - `/charly-check:dbus` — the `dbus:` check verb (notifications/list/call/introspect, served out-of-process by `candy/plugin-dbus`)
+            - `/charly-build:charly-mcp-cmd` — the box inherits 2 deploy-scope `mcp:` checks from the `chrome-devtools-mcp` candy (ping + list-tools asserting `navigate_page`/`take_screenshot`). `charly check live sway-browser-vnc --filter mcp` runs them; note the **port-publishing gotcha** — if your `charly.yml` has an explicit `port:` override that predates `chrome-devtools-mcp`, port 9224 may not be published. See `/charly-build:charly-mcp-cmd` for the fix.
+            
+            ## Related Boxes
+            
+            - `selkies-desktop` — browser-accessible remote desktop (can be accessed from sway-browser-vnc's Chrome)
+            
+            ## Related
+            
+            - `/charly-image:image` — image family umbrella (`candy:` image entries — those carrying `base:`/`from:` — in `charly.yml`, build/validate/inspect/list)
+            - `/charly-build:build` — the embedded build vocabulary (distros, builders, init-systems)
+
+tutorial-shell-skill:
+    skill:
+        name: tutorial-shell
+        family: distros
+        owner: tutorial-shell
+        description: |-
+            The teaching box quoted end to end by opencharly.ai — a minimal, real dev shell
+            composing one tool candy and one service candy, with the container init injected.
+            MUST be invoked before editing the tutorial-shell box, the check-tutorial-shell bed,
+            or any documentation page that excerpts them.
+        content: |
+            # tutorial-shell
+            
+            The **documented example**. `tutorial-shell` exists so the quickstart and the concepts
+            curriculum on [opencharly.ai](https://opencharly.ai) can quote a box that is real, builds, and is
+            re-proven on every R10 roster run — instead of illustrating with YAML that nobody executes.
+            
+            Lives in the **`opencharly/distro-fedora`** repo (git submodule at **`box/fedora`**). Its
+            `fedora` base is bare-local in the same self-contained submodule (`import: []`), and both composed
+            candies are pulled by `@github` reference.
+            
+            ```bash
+            charly -C box/fedora box build tutorial-shell
+            charly -C box/fedora check run check-tutorial-shell
+            ```
+            
+            ## Box Properties
+            
+            | Property | Value |
+            |----------|-------|
+            | Base | fedora |
+            | Candies | ripgrep, sshd |
+            | Ports | 2222 (tcp, from the sshd candy) |
+            | Init | supervisord — **auto-injected**, not composed (see below) |
+            | Bed | `check-tutorial-shell` (`disposable: true`, pod) |
+            
+            ## Why these candies
+            
+            Each one is there to teach exactly one thing, and the composed list is kept to two so it stays
+            readable when quoted in full on a documentation page:
+            
+            | Candy | Teaches |
+            |---|---|
+            | `ripgrep` (its own repo, opencharly/layer-ripgrep) | a **tool** candy — packages plus deterministic probes, no service |
+            | `/charly-coder:sshd` | a **service** candy, and the canonical init-polymorphism example: ONE `service:` list carrying both a `use_packaged:` systemd form and a custom `exec:` supervisord form |
+            
+            **The init is deliberately absent from that list.** Because `sshd` declares a service, charly
+            resolves the init the target needs and injects it — `supervisord` for a container image, nothing
+            extra for a systemd machine venue, which already has an init. Composing the init by hand is
+            neither required nor correct: it would be target-blind. That is why the box teaches with two
+            candies rather than three.
+            
+            Together they cover the whole shape of a box without any of them being a fixture: a reader can
+            build this, shell into it, and use it.
+            
+            ## What the box's own plan asserts — and what it deliberately does not
+            
+            The box carries **one** `check:` step, `tutorial-shell-service-wired-into-init`: the assembled
+            `/etc/supervisord.conf` contains a `[program:sshd]` block.
+            
+            That is the only claim composition itself produces. The injected `supervisord`'s plan proves the
+            init is installed; `sshd`'s proves the daemon is installed; **neither proves sshd became a
+            supervisord program**. Drop `sshd` from the composed list and the check fails: with no `service:`
+            declared, nothing selects an init, so no supervisord candy is injected and no
+            `/etc/supervisord.conf` is assembled to hold a `[program:sshd]` block.
+            
+            **Co-residence is NOT checked here, on purpose.** Every composed candy's plan runs against *this*
+            image, so ripgrep's probes and sshd's probes both passing already proves both landed. A box-level
+            `command -v rg && command -v sshd` would duplicate them (R3), and it would pass for the wrong
+            reason — testing the candies rather than the composition. The same applies to the bed, which
+            carries no `plan:` of its own.
+            
+            This distinction is the reason the box exists in its current shape, and it is worth preserving: a
+            teaching example that restates a candy's own probe in the composing box teaches the opposite of
+            the rule the site's own "the spec is the test" page states.
+            
+            ## Editing rule — the site quotes this file verbatim
+            
+            Documentation pages **excerpt** `box/tutorial-shell/charly.yml`, they do not paraphrase it. Two
+            consequences:
+            
+            1. **Keep it readable.** Comments in the box are written for a first-time reader, not for a
+               maintainer. Resist adding candies: every addition costs a line on several published pages.
+            2. **A change here is a documentation change.** After editing the box, re-read the pages that
+               quote it (the quickstart and the concepts curriculum) and update the surrounding prose in the
+               same cutover — a quoted block that no longer matches its source is a doc-vs-reality divergence
+               (R1), not a cosmetic drift.
+            
+            ## Related Boxes
+            
+            - `/charly-distros:fedora` — the parent base image
+            - `/charly-distros:charly-fedora` — the next box up in size: the same shape plus the charly toolchain
+            - `/charly-coder:fedora-coder` — the kitchen-sink end of the same spectrum
+            
+            ## Related Commands
+            
+            - `/charly-build:build` — build the box
+            - `/charly-check:check` — the bed model and `charly check run`
+            
+            ## When to Use This Skill
+            
+            **MUST be invoked** when editing the `tutorial-shell` box, the `check-tutorial-shell` bed, or any
+            opencharly.ai page that quotes them.
+            
+            ## Related
+            
+            - `/charly-image:image` — image family umbrella (`candy:` entries carrying `base:`/`from:`)
+            - `/charly-build:docs` — the generator that publishes this card and the box's reference page
+
+valkey-test-skill:
+    skill:
+        name: valkey-test
+        family: distros
+        owner: valkey-test
+        description: |-
+            Test box with Valkey (Redis-compatible) key-value store.
+            Currently disabled. Used for development testing.
+            MUST be invoked before building or troubleshooting the valkey-test box.
+        content: |
+            # valkey-test
+            
+            Development test box with Valkey in-memory data store.
+            
+            ## Box Properties
+            
+            | Property | Value |
+            |----------|-------|
+            | Base | fedora |
+            | Layers | agent-forwarding, supervisord, valkey |
+            | Platforms | linux/amd64, linux/arm64 |
+            | Ports | 6379 (Valkey) |
+            | Status | **disabled** (set `enabled: true` in charly.yml) |
+            
+            ## Purpose
+            
+            Used for testing the Valkey candy (Redis-compatible fork). Runs as a supervisord service on port 6379.
+            
+            ## Key Candies
+            
+            - `/charly-infrastructure:valkey` — Valkey data store
+            - `/charly-infrastructure:supervisord` — Process manager
+            
+            ## Related Boxes
+            - `/charly-distros:fedora` — parent base image
+            - `/charly-distros:fedora-test` — sibling test box
+            
+            ## Related Commands
+            - `/charly-build:build` — build the valkey-test box
+            - `/charly-core:service` — manage the supervised valkey service
+            
+            ## When to Use This Skill
+            
+            **MUST be invoked** when the task involves the valkey-test box or Valkey service testing.
+            
+            ## Related
+            
+            - `/charly-image:image` — image family umbrella (`candy:` image entries — those carrying `base:`/`from:` — in `charly.yml`, build/validate/inspect/list)
+
