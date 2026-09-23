@@ -976,8 +976,8 @@ fedora-coder-skill:
                 - "18765:18765"               # charly-mcp (Streamable HTTP)
               candy:
                 # Baseline (matches the charly-cachyos power-user pattern)
-                - agent-forwarding
-                - sshd
+                - @github.com/opencharly/layer-agent-forwarding:v2026.243.0408
+                - @github.com/opencharly/pod-sshd:v2026.239.1637
                 - charly                          # the full toolchain: charly binary + virtualization + gocryptfs + socat
                 - charly-mcp                      # MCP gateway for the entire charly CLI
                 - container-nesting           # rootless nested podman/buildah/skopeo
@@ -988,34 +988,34 @@ fedora-coder-skill:
                 - language-runtimes           # Go + PHP + .NET 9 + nodejs-devel + python3-devel
                 - '@github.com/opencharly/layer-golang'
                 - '@github.com/opencharly/layer-nodejs'  # generic nodejs candy (Node 22 on Fedora)
-                - rust
-                - pixi
+                - @github.com/opencharly/layer-rust:v2026.239.1627
+                - @github.com/opencharly/layer-pixi:v2026.239.1634
                 - uv                          # direct-download binary (no pixi env)
             
                 # Build + developer tooling
-                - build-toolchain
+                - @github.com/opencharly/layer-build-toolchain:v2026.239.1636
                 - dev-tools                   # ripgrep, bat, fd, neovim, htop, …
-                - pre-commit
-                - direnv
+                - @github.com/opencharly/layer-pre-commit:v2026.243.0409
+                - @github.com/opencharly/layer-direnv:v2026.242.1147
                 - gh                          # GitHub CLI + git + git-lfs (single-responsibility)
-                - typst
-                - asciinema
+                - @github.com/opencharly/layer-typst:v2026.240.1854
+                - @github.com/opencharly/layer-asciinema:v2026.240.0119
             
                 # AI coding CLIs
-                - claude-code
-                - codex
+                - @github.com/opencharly/layer-claude-code:v2026.239.1626
+                - @github.com/opencharly/layer-codex:v2026.243.0408
                 - '@github.com/opencharly/layer-gemini'
                 - forgecode                   # 5th CLI (astral-sh-style)
-                - oracle
+                - @github.com/opencharly/layer-oracle:v2026.243.0409
             
                 # DevOps / cloud / infra
                 - devops-tools                # AWS, Scaleway, kubectx/kubens, OpenTofu
                 - kubernetes                  # kubectl, helm, k3d
-                - docker-ce
+                - @github.com/opencharly/layer-docker-ce:v2026.239.1626
                 - github-actions              # act, actionlint
-                - google-cloud
+                - @github.com/opencharly/layer-google-cloud:v2026.241.0656
                 - google-cloud-npm            # firebase npm bindings (Gemini CLI comes from the gemini candy)
-                - grafana-tools
+                - @github.com/opencharly/layer-grafana-tools:v2026.239.1628
             ```
             
             Network: default `charly` bridge. The `port:` mapping is the right way to expose
@@ -1472,15 +1472,15 @@ jupyter-ml-notebook-skill:
             jupyter-ml-notebook:
               base: nvidia
               candy:
-                - agent-forwarding
-                - jupyter-ml
-                - notebook-templates
-                - notebook-finetuning
-                - notebook-ollama
-                - notebook-llm-on-supercomputers
-                - notebook-openrouter
+                - @github.com/opencharly/layer-agent-forwarding:v2026.243.0408
+                - @github.com/opencharly/pod-jupyter-ml:v2026.243.0923
+                - @github.com/opencharly/layer-notebook-templates:v2026.240.0201
+                - @github.com/opencharly/layer-notebook-finetuning:v2026.239.1606
+                - @github.com/opencharly/layer-notebook-ollama:v2026.239.1601
+                - @github.com/opencharly/layer-notebook-llm-on-supercomputers:v2026.240.0119
+                - @github.com/opencharly/layer-notebook-openrouter:v2026.239.1600
                 - '@github.com/opencharly/pod-dbus'
-                - charly
+                - @github.com/opencharly/layer-charly:v2026.243.0408
               ports:
                 - "8888:8888"
               platforms:
