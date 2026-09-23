@@ -115,23 +115,14 @@ check-sway-browser-vnc-pod:
 # (check-cross-*) also live here now (below, before vm:) — their web /
 # chrome-headless fixtures and the check-cross-local-driver template are
 # local to this submodule.
-check-pod:
-    pod:
-        image: check-pod
-        disposable: true
-        lifecycle: dev
-        description: Sole combined fast (~110s) mechanism bed proving four pipeline paths at once — kind:box build, kind:candy composition order, kind:pod runtime, and deploy-target rendering — the canonical fast R10 gate for box/candy/pod/deploy-target code changes. Builds a two-layer fedora-minimal:43 image (check-base-layer + check-stack-layer asserting the base marker survived), deploys it, and runs file marker checks, the :18794 port/ss listener check, the check-sleep supervisord service check, plus a host-side charly status --json (status-shows-pod).
-        plan:
-            - check: command=charly status --json
-              id: status-shows-pod
-              stdout:
-                - contains: '"kind": "pod"'
-                - contains: check-pod
-              context:
-                - runtime
-              command:
-                command: ${CHARLY_BIN} status --json
-                in_container: false
+# check-pod — the BED relocated to opencharly/plugin-pod (its subject is the pod
+# runtime/mechanism that plugin owns); receiving half opencharly/plugin-pod#6,
+# source-side removal this PR. `box/check-pod/` is KEPT: it is the shared
+# fixture for the four remaining pod-mechanism beds below (check-addcandy-pod /
+# check-stepkind-emit-pod / check-enc-pod / check-tunnel-pod), exactly as
+# `web-vm` was kept for check-cross-vm-http in distro-fedora#54. Deleting the
+# fixture would leave those four beds failing at image-build with
+# `unknown box "check-pod"` (proven: `charly box build check-pod`).
 # add_candy-on-pod overlay-deploy witness. Deploy-KEY (check-addcandy-pod) differs
 # from image-NAME (check-pod) — the precise condition under which the pod overlay
 # (`<deploy-key>-overlay` + the `<deploy-key>:<calver>` alias, carrying the
