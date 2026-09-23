@@ -978,26 +978,26 @@ fedora-coder-skill:
                 # Baseline (matches the charly-cachyos power-user pattern)
                 - '@github.com/opencharly/layer-agent-forwarding:v2026.243.0408'
                 - '@github.com/opencharly/pod-sshd:v2026.239.1637'
-                - charly                          # the full toolchain: charly binary + virtualization + gocryptfs + socat
-                - charly-mcp                      # MCP gateway for the entire charly CLI
-                - container-nesting           # rootless nested podman/buildah/skopeo
+                - '@github.com/opencharly/layer-charly:v2026.243.0408'
+                - '@github.com/opencharly/pod-charly-mcp:v2026.243.0516'
+                - '@github.com/opencharly/layer-container-nesting:v2026.239.1647'
                 - '@github.com/opencharly/pod-dbus'
                 - '@github.com/opencharly/layer-tmux'
             
                 # Language runtimes + managers
-                - language-runtimes           # Go + PHP + .NET 9 + nodejs-devel + python3-devel
+                - '@github.com/opencharly/layer-language-runtimes:v2026.243.0409'
                 - '@github.com/opencharly/layer-golang'
                 - '@github.com/opencharly/layer-nodejs'  # generic nodejs candy (Node 22 on Fedora)
                 - '@github.com/opencharly/layer-rust:v2026.239.1627'
                 - '@github.com/opencharly/layer-pixi:v2026.239.1634'
-                - uv                          # direct-download binary (no pixi env)
+                - '@github.com/opencharly/layer-uv:v2026.239.1631'
             
                 # Build + developer tooling
                 - '@github.com/opencharly/layer-build-toolchain:v2026.239.1636'
-                - dev-tools                   # ripgrep, bat, fd, neovim, htop, …
+                - '@github.com/opencharly/layer-dev-tools:v2026.239.1624'
                 - '@github.com/opencharly/layer-pre-commit:v2026.243.0409'
                 - '@github.com/opencharly/layer-direnv:v2026.242.1147'
-                - gh                          # GitHub CLI + git + git-lfs (single-responsibility)
+                - '@github.com/opencharly/layer-gh:v2026.239.1624'
                 - '@github.com/opencharly/layer-typst:v2026.240.1854'
                 - '@github.com/opencharly/layer-asciinema:v2026.240.0119'
             
@@ -1005,16 +1005,16 @@ fedora-coder-skill:
                 - '@github.com/opencharly/layer-claude-code:v2026.239.1626'
                 - '@github.com/opencharly/layer-codex:v2026.243.0408'
                 - '@github.com/opencharly/layer-gemini'
-                - forgecode                   # 5th CLI (astral-sh-style)
+                - '@github.com/opencharly/layer-forgecode:v2026.243.0408'
                 - '@github.com/opencharly/layer-oracle:v2026.243.0409'
             
                 # DevOps / cloud / infra
-                - devops-tools                # AWS, Scaleway, kubectx/kubens, OpenTofu
-                - kubernetes                  # kubectl, helm, k3d
+                - '@github.com/opencharly/layer-devops-tools:v2026.243.0408'
+                - '@github.com/opencharly/layer-kubernetes:v2026.241.0654'
                 - '@github.com/opencharly/layer-docker-ce:v2026.239.1626'
-                - github-actions              # act, actionlint
+                - '@github.com/opencharly/layer-github-actions:v2026.242.1323'
                 - '@github.com/opencharly/layer-google-cloud:v2026.241.0656'
-                - google-cloud-npm            # firebase npm bindings (Gemini CLI comes from the gemini candy)
+                - '@github.com/opencharly/layer-google-cloud-npm:v2026.243.0515'
                 - '@github.com/opencharly/layer-grafana-tools:v2026.239.1628'
             ```
             
