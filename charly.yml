@@ -502,6 +502,14 @@ check-cross-pod-cdp:
                     - contains: charly-fixture-web-content-marker
                   context:
                     - runtime
+# Cross-deployment probing ACROSS KINDS (local→VM): a LOCAL (host) DRIVER member
+# curls a web-server SUBJECT running in a VM member. The driver reaches the guest's
+# nginx :80 via ${HOST:check-cross-vm-http:80} → resolveCheckEndpoint's VM branch →
+# `ssh -L 127.0.0.1:<rand>:127.0.0.1:80` over the managed charly-check-cross-vm-http alias —
+# the SAME host-vantage resolver check-cross-local-http uses for a pod subject;
+# only the subject KIND differs (VM vs pod), so this is the cross-kind proof
+# with ZERO VM-specific check code. A pod driver can't reach a host-vantage
+# 127.0.0.1 (its own netns), so the generic, no-hack VM driver runs host-side.
 check-cross-vm-http:
     vm:
         from: web-vm
