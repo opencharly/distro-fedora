@@ -1,4 +1,3 @@
-version: 2026.261.1747
 #  opencharly/distro-fedora — the Fedora image-family, a git submodule mounted at
 #  box/fedora. SELF-CONTAINED: it OWNS the full Fedora base stack locally
 #  (fedora → fedora-nonfree → fedora-builder), the Fedora GPU base family

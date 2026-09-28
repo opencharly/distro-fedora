@@ -1,4 +1,4 @@
-# box/fedora — signpost (not the rule-set)
+# box/fedora — AGENTS.md signpost (not the rule-set)
 
 This submodule is **self-contained**: it OWNS the full Fedora base/builder stack
 locally (`fedora` → `fedora-nonfree` → `fedora-builder`), the Fedora **GPU base
@@ -27,7 +27,7 @@ import is dissolved).
   box) + CUDA toolkit; `python-ml` builds on it.
 - `/charly-selkies:sway-browser-vnc` — the minimal Sway + wayvnc + Chrome desktop.
 
-**Authoritative rules live in the `opencharly` superproject's root `CLAUDE.md`**
+**Authoritative rules live in the `opencharly` superproject's root `AGENTS.md`**
 (R0–R10, hard-cutover, AI attribution, git-workflow). This file only signposts
 and restates no rule. The multi-agent workflow is in `/charly-internals:agents`.
 History lives in this repo's `CHANGELOG/` (one file per CalVer).
