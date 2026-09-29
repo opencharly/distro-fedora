@@ -9,10 +9,16 @@ fedora-coder:
             npm: fedora-builder
             cargo: fedora-builder
         candy:
+            # ONE SOURCE per layer (opencharly/charly#739, operator ruling): a box never
+            # re-lists a layer a composed META-LAYER already provides. `pod-charly-mcp`
+            # provides `layer-charly` (its candy: list) and `layer-agent-forwarding`
+            # provides `layer-direnv` — so those two are NOT listed here. Listing them
+            # too fetched each layer TWICE (two pins, two fetch coordinates) inside this
+            # one box, which the per-box resolver correctly flags. The pod/layer is the
+            # meta-layer; it is the single source.
             - '@github.com/opencharly/layer-agent-forwarding:v2026.243.0408'
             - '@github.com/opencharly/pod-sshd:v2026.239.1637'
-            - '@github.com/opencharly/layer-charly:v2026.241.1407'
-            - '@github.com/opencharly/pod-charly-mcp:v2026.241.1219'
+            - '@github.com/opencharly/pod-charly-mcp:v2026.272.0015'
             - '@github.com/opencharly/layer-container-nesting:v2026.239.1647'
             - '@github.com/opencharly/pod-dbus:v2026.239.1555'
             - '@github.com/opencharly/layer-tmux:v2026.240.0202'
@@ -25,7 +31,6 @@ fedora-coder:
             - '@github.com/opencharly/layer-build-toolchain:v2026.239.1636'
             - '@github.com/opencharly/layer-dev-tools:v2026.239.1624'
             - '@github.com/opencharly/layer-pre-commit:v2026.239.1552'
-            - '@github.com/opencharly/layer-direnv:v2026.241.0738'
             - '@github.com/opencharly/layer-gh:v2026.239.1624'
             - '@github.com/opencharly/layer-typst:v2026.240.1854'
             - '@github.com/opencharly/layer-asciinema:v2026.240.0119'

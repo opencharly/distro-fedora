@@ -2,7 +2,10 @@ hermes-playwright:
     candy:
         base: fedora
         candy:
+            # ONE SOURCE per layer (opencharly/charly#739, operator ruling): the meta-layer
+            # `layer-hermes-playwright` provides `pod-hermes` — so the box lists the
+            # meta-layer, not the pod it already composes. `pod-dbus` is not provided by
+            # either, so it stays.
             - '@github.com/opencharly/layer-agent-forwarding:v2026.243.0408'
-            - '@github.com/opencharly/pod-hermes:v2026.239.1605'
-            - '@github.com/opencharly/layer-hermes-playwright:v2026.239.1612'
+            - '@github.com/opencharly/layer-hermes-playwright:v2026.272.0221'
             - '@github.com/opencharly/pod-dbus:v2026.239.1555'
