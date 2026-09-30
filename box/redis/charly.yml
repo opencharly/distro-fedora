@@ -3,6 +3,10 @@ redis:
         base: fedora
         candy:
             # ONE SOURCE per layer (opencharly/charly#739, operator ruling): the test
-            # meta-layer `pod-check-redis-init-layer` provides `pod-redis` (and
-            # layer-supervisord) — so the box lists the test layer only.
+            # meta-layer `pod-check-redis-init-layer` provides `pod-redis` (via its
+            # `require:`), so the box lists the test layer, not pod-redis too. The
+            # init candy (`layer-supervisord`) is NOT listed because charly
+            # AUTO-INJECTS the active init's `depends_candy` whenever a candy
+            # declares a `service:` (sdk/deploykit/init_depends.go
+            # InjectInitDependsCandy) — composing it by hand would be target-blind.
             - '@github.com/opencharly/pod-check-redis-init-layer:v2026.240.0203'
