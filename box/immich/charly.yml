@@ -9,5 +9,5 @@ immich:
             - '@github.com/opencharly/layer-supervisord:v2026.240.0121'
             - '@github.com/opencharly/layer-vectorchord:v2026.272.0414'
             - '@github.com/opencharly/pod-redis:v2026.239.1639'
-            - '@github.com/opencharly/pod-immich:v2026.239.1559'
+            - '@github.com/opencharly/pod-immich:v2026.251.1422'
             - '@github.com/opencharly/pod-dbus:v2026.239.1555'
