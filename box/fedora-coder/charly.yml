@@ -16,16 +16,14 @@ fedora-coder:
             # too fetched each layer TWICE (two pins, two fetch coordinates) inside this
             # one box, which the per-box resolver correctly flags. The pod/layer is the
             # meta-layer; it is the single source.
-            - '@github.com/opencharly/layer-agent-forwarding:v2026.243.0408'
+            - '@github.com/opencharly/layer-agent-forwarding:v2026.271.1839'
             - '@github.com/opencharly/pod-sshd:v2026.239.1637'
             - '@github.com/opencharly/pod-charly-mcp:v2026.272.0015'
             - '@github.com/opencharly/layer-container-nesting:v2026.239.1647'
             - '@github.com/opencharly/pod-dbus:v2026.239.1555'
             - '@github.com/opencharly/layer-tmux:v2026.240.0202'
-            - '@github.com/opencharly/layer-language-runtimes:v2026.240.0201'
+            - '@github.com/opencharly/layer-language-runtimes:v2026.272.0320'
             - '@github.com/opencharly/layer-golang:v2026.239.1614'
-            - '@github.com/opencharly/layer-nodejs:v2026.239.1624'
-            - '@github.com/opencharly/layer-rust:v2026.239.1627'
             - '@github.com/opencharly/layer-pixi:v2026.239.1634'
             - '@github.com/opencharly/layer-uv:v2026.239.1631'
             - '@github.com/opencharly/layer-build-toolchain:v2026.239.1636'
@@ -42,7 +40,7 @@ fedora-coder:
             - '@github.com/opencharly/layer-kubernetes:v2026.240.0201'
             - '@github.com/opencharly/layer-docker-ce:v2026.239.1626'
             - '@github.com/opencharly/layer-github-actions:v2026.239.1617'
-            - '@github.com/opencharly/layer-google-cloud-npm:v2026.240.0201'
+            - '@github.com/opencharly/layer-google-cloud-npm:v2026.272.0141'
             - '@github.com/opencharly/layer-grafana-tools:v2026.239.1628'
         # No box-level check: every CLI / language / devops binary and the sshd +
         # charly-mcp ports belong to their providing candy's baked check
