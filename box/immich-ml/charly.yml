@@ -6,10 +6,10 @@ immich-ml:
         candy:
             # ONE SOURCE per layer (opencharly/charly#739, operator ruling): `pod-immich-ml`
             # provides pod-immich (→ layer-nodejs/-supervisord, pod-postgresql, pod-redis),
-            # `pod-dbus` provides layer-supervisord, and `layer-vectorchord` provides
-            # pod-postgresql — so none of those are re-listed here.
+            # `pod-dbus` provides layer-supervisord, `layer-vectorchord` provides
+            # pod-postgresql, and `layer-python-ml` provides layer-cuda — so none of those
+            # are re-listed here.
             - '@github.com/opencharly/layer-agent-forwarding:v2026.243.0408'
-            - '@github.com/opencharly/layer-cuda:v2026.239.1557'
             - '@github.com/opencharly/layer-python-ml:v2026.240.0122'
             - '@github.com/opencharly/layer-vectorchord:v2026.272.0414'
             - '@github.com/opencharly/pod-immich-ml:v2026.272.0102'
