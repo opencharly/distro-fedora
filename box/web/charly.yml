@@ -2,5 +2,6 @@ web:
     candy:
         base: fedora
         candy:
-            - '@github.com/opencharly/layer-supervisord:v2026.240.0121'
+            # ONE SOURCE per layer (opencharly/charly#739, operator ruling): `pod-web-layer`
+            # provides `layer-supervisord`, so it is not re-listed.
             - '@github.com/opencharly/pod-web-layer:v2026.239.1636'
