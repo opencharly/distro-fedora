@@ -9,5 +9,5 @@ ollama:
             # The CUDA backend is composed HERE, not required by the ollama candy:
             # this box sits on the NVIDIA base, so it opts into the GPU backend while
             # a CPU consumer of the same candy pays nothing for it.
-            - '@github.com/opencharly/layer-ollama-cuda:v2026.274.0631'
+            - '@github.com/opencharly/layer-ollama-cuda:v2026.274.0847'
             - '@github.com/opencharly/pod-dbus:v2026.274.0648'
