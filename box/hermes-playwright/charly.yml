@@ -3,5 +3,5 @@ hermes-playwright:
         base: fedora
         candy:
             - '@github.com/opencharly/layer-agent-forwarding:v2026.274.0608'
-            - '@github.com/opencharly/layer-hermes-playwright:v2026.273.1832'
+            - '@github.com/opencharly/layer-hermes-playwright:v2026.274.0758'
             - '@github.com/opencharly/pod-dbus:v2026.274.0648'
