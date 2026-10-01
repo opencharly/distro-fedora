@@ -3,4 +3,4 @@ chrome-headless:
         base: fedora
         candy:
             - '@github.com/opencharly/layer-supervisord:v2026.271.1817'
-            - '@github.com/opencharly/pod-chrome-headless:v2026.272.0018'
+            - '@github.com/opencharly/pod-chrome-headless:v2026.274.0623'

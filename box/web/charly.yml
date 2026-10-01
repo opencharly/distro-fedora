@@ -3,4 +3,4 @@ web:
         base: fedora
         candy:
             - '@github.com/opencharly/layer-supervisord:v2026.271.1817'
-            - '@github.com/opencharly/pod-web-layer:v2026.272.0338'
+            - '@github.com/opencharly/pod-web-layer:v2026.274.0635'
