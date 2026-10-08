@@ -717,7 +717,7 @@ charly-fedora-skill:
             | `devices` | `[/dev/fuse, /dev/net/tun]` (from `/charly-distros:container-nesting`) |
             | `privileged` | `false` |
             
-            See `/charly-openclaw:openclaw-desktop` (streaming-desktop sibling) and
+            See `/charly-distros:charly-fedora` (streaming-desktop sibling) and
             `/charly-coder:fedora-coder` (kitchen-sink dev sibling) for other boxes
             sharing this posture, and `/charly-distros:container-nesting` for the
             kernel `mount_too_revealing()` RCA.
@@ -938,7 +938,7 @@ fedora-coder-skill:
             in one container. Fedora-nonfree base, direct candies spanning language
             runtimes, build tooling, AI coding CLIs, and the full cloud/devops
             stack. Runs as uid 1000 with passwordless sudo — rootless-first, matches
-            the /charly-openclaw:openclaw-desktop security posture.
+            the /charly-openclaw:charly-fedora security posture.
             Use when working with the fedora-coder box — specifically any task that
             involves SSH-ing into a single container and having every tool a polyglot
             engineer reaches for during a working day already installed.
@@ -949,7 +949,7 @@ fedora-coder-skill:
             
             The everyday-development counterpart to `/charly-distros:charly-fedora`: all the
             coding + AI + DevOps tooling a developer needs in one box, no desktop,
-            no streaming. Distinct from `openclaw-desktop` (which adds the
+            no streaming. Distinct from `charly-fedora` (which adds the
             browser-streamed Wayland desktop) — `fedora-coder` is headless and
             meant to be accessed via `ssh -p 2222` or `charly shell`.
             
@@ -1024,7 +1024,7 @@ fedora-coder-skill:
             No `uid:` / `gid:` / `user:` / `security:` override — inherits
             `1000/1000/user` from `defaults` and the candy-level security from
             `/charly-distros:container-nesting`. Rootless-first by design (shares this
-            posture with `/charly-openclaw:openclaw-desktop`).
+            posture with `/charly-distros:charly-fedora`).
             
             ## Resolved security posture (OCI label)
             
@@ -1210,7 +1210,7 @@ fedora-coder-skill:
             
             - Building, deploying, or troubleshooting the `fedora-coder` box.
             - Picking the right power-user base image for a coding/dev workload (this
-              vs. `charly-fedora` vs. `charly-arch` vs. `openclaw-desktop`).
+              vs. `charly-fedora` vs. `charly-arch` vs. `charly-fedora`).
             - Understanding the rootless-first architectural pattern shared by the
               four power-user boxes (kernel RCA belongs in
               `/charly-distros:container-nesting`; the composition that proves it works
