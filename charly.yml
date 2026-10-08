@@ -717,8 +717,7 @@ charly-fedora-skill:
             | `devices` | `[/dev/fuse, /dev/net/tun]` (from `/charly-distros:container-nesting`) |
             | `privileged` | `false` |
             
-            See `/charly-openclaw:openclaw-desktop` (streaming-desktop sibling) and
-            `/charly-coder:fedora-coder` (kitchen-sink dev sibling) for other boxes
+            See `/charly-coder:fedora-coder` (kitchen-sink dev sibling) for another box
             sharing this posture, and `/charly-distros:container-nesting` for the
             kernel `mount_too_revealing()` RCA.
             
@@ -828,7 +827,6 @@ charly-fedora-skill:
             - `/charly-distros:fedora` — parent base image
             - `/charly-coder:charly-arch` — Arch counterpart, same layers, same rootless posture
             - `/charly-coder:fedora-coder` — kitchen-sink dev sibling (adds coding CLIs + DevOps)
-            - `/charly-openclaw:openclaw-desktop` — streaming-desktop counterpart (charly toolchain + browser-accessible Wayland); shares the rootless-first posture
             - `/charly-distros:githubrunner` — self-hosted GitHub Actions runner; same uid=1000 posture
             
             ## Related Commands
@@ -938,8 +936,7 @@ fedora-coder-skill:
             Kitchen-sink development box: coding + AI-coding CLIs + DevOps tooling
             in one container. Fedora-nonfree base, direct candies spanning language
             runtimes, build tooling, AI coding CLIs, and the full cloud/devops
-            stack. Runs as uid 1000 with passwordless sudo — rootless-first, matches
-            the /charly-openclaw:openclaw-desktop security posture.
+            stack. Runs as uid 1000 with passwordless sudo — rootless-first.
             Use when working with the fedora-coder box — specifically any task that
             involves SSH-ing into a single container and having every tool a polyglot
             engineer reaches for during a working day already installed.
@@ -950,8 +947,7 @@ fedora-coder-skill:
             
             The everyday-development counterpart to `/charly-distros:charly-fedora`: all the
             coding + AI + DevOps tooling a developer needs in one box, no desktop,
-            no streaming. Distinct from `openclaw-desktop` (which adds the
-            browser-streamed Wayland desktop) — `fedora-coder` is headless and
+            no streaming. `fedora-coder` is headless and
             meant to be accessed via `ssh -p 2222` or `charly shell`.
             
             > **Location:** lives in the **`opencharly/distro-fedora`** repo (git submodule at
@@ -1024,8 +1020,7 @@ fedora-coder-skill:
             
             No `uid:` / `gid:` / `user:` / `security:` override — inherits
             `1000/1000/user` from `defaults` and the candy-level security from
-            `/charly-distros:container-nesting`. Rootless-first by design (shares this
-            posture with `/charly-openclaw:openclaw-desktop`).
+            `/charly-distros:container-nesting`. Rootless-first by design.
             
             ## Resolved security posture (OCI label)
             
@@ -1190,7 +1185,6 @@ fedora-coder-skill:
             
             ## Related Boxes
             
-            - `/charly-openclaw:openclaw-desktop` — sibling rootless-first power-user box; same security posture + container-nesting, but adds the streaming desktop. Prefer when you want browser-accessible GUI + dev tools.
             - `/charly-distros:charly-fedora` — minimal charly toolchain (no coding CLIs, no DevOps), also uid=1000 with sudo.
             - `/charly-coder:charly-arch` — Arch Linux counterpart of charly-fedora.
             - `/charly-distros:githubrunner` — self-hosted GitHub Actions runner; same uid=1000 posture.
@@ -1212,7 +1206,7 @@ fedora-coder-skill:
             
             - Building, deploying, or troubleshooting the `fedora-coder` box.
             - Picking the right power-user base image for a coding/dev workload (this
-              vs. `charly-fedora` vs. `charly-arch` vs. `openclaw-desktop`).
+              vs. `charly-fedora` vs. `charly-arch`).
             - Understanding the rootless-first architectural pattern shared by the
               four power-user boxes (kernel RCA belongs in
               `/charly-distros:container-nesting`; the composition that proves it works
