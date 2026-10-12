@@ -27,7 +27,7 @@ tutorial-shell:
             #
             # Co-residence needs no check here: every composed candy's own plan runs against
             # THIS image, so ripgrep's probes and sshd's probes both passing IS the proof that
-            # both landed. Re-asserting it at box level would duplicate them (R3).
+            # both landed. Re-asserting it at box level would duplicate them (R2).
             #
             # What no candy can assert alone is the WIRING between two of them. `supervisord`
             # assembles /etc/supervisord.conf from per-candy fragments at image build, so a

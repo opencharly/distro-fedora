@@ -75,7 +75,7 @@ check-tutorial-shell:
         disposable: true
         lifecycle: dev
         description: >-
-            Sole proof of the DOCUMENTED teaching example — the tutorial-shell box that opencharly.ai quotes verbatim in its quickstart and concepts curriculum. Builds the box (supervisord + ripgrep + sshd) on the bare Fedora base, deploys it as a pod, brings it to steady state, and does it again after a fresh rebuild. sshd declares a service:, so charly resolves the init the target needs; the box lists the supervisord candy explicitly so the assembled /etc/supervisord.conf is deterministic, and its own plan asserts sshd became a supervisord program. The acceptance content is the composed candies' own runtime probes — sshd's service and published-port checks and supervisord's control-socket check — each candy contributing its acceptance plan and not merely its binary. The box's image-scope check asserts the wiring itself: [program:sshd] in the assembled supervisord config, a block no composed candy produces on its own. Carries no plan: of its own. A bed earns its own steps only for a claim that needs a LIVE deployment AND that no composed candy already makes — the local example is check-sway-browser-vnc-pod, which adds cdp/wl/record probes against a running desktop. Every live claim here is already covered by the composed candies' runtime probes, so a bed plan could only duplicate them (R3), and the duplicate would pass for the wrong reason: testing the candy rather than this deployment.
+            Sole proof of the DOCUMENTED teaching example — the tutorial-shell box that opencharly.ai quotes verbatim in its quickstart and concepts curriculum. Builds the box (supervisord + ripgrep + sshd) on the bare Fedora base, deploys it as a pod, brings it to steady state, and does it again after a fresh rebuild. sshd declares a service:, so charly resolves the init the target needs; the box lists the supervisord candy explicitly so the assembled /etc/supervisord.conf is deterministic, and its own plan asserts sshd became a supervisord program. The acceptance content is the composed candies' own runtime probes — sshd's service and published-port checks and supervisord's control-socket check — each candy contributing its acceptance plan and not merely its binary. The box's image-scope check asserts the wiring itself: [program:sshd] in the assembled supervisord config, a block no composed candy produces on its own. Carries no plan: of its own. A bed earns its own steps only for a claim that needs a LIVE deployment AND that no composed candy already makes — the local example is check-sway-browser-vnc-pod, which adds cdp/wl/record probes against a running desktop. Every live claim here is already covered by the composed candies' runtime probes, so a bed plan could only duplicate them (R2), and the duplicate would pass for the wrong reason: testing the candy rather than this deployment.
 # check-sway-browser-vnc-pod deploys the SHIPPING sway-browser-vnc image
 # (Sway desktop + Chrome + wayvnc) on the Fedora base. The image bakes
 # binaries/services/cdp/vnc/wl/dbus + mcp (chrome-devtools-mcp layer); the
@@ -375,7 +375,7 @@ check-jupyter-ml-pod:
 # 200, ollama --version, ollama list), the three host-side `charly ollama` steps
 # that prove plugin dispatch and live API round-trips, and the CUDA backend probe.
 # Authoring them on the candies rather than here is what lets the CachyOS sibling
-# bed prove the same surface without repeating a line (R3). The heavy pull/persist
+# bed prove the same surface without repeating a line (R2). The heavy pull/persist
 # proof stays with the candy's agent-check (graded by `charly check feature run`),
 # keeping the deterministic bed light.
 check-ollama-pod:
@@ -446,7 +446,7 @@ check-fedora-vm:
 # `charly` network. Proves venue-from-position + ${HOST:<subject>} end-to-end —
 # the canonical "a different kind of deployment tests another" case. Both members
 # are siblings under a GROUP, brought up by foldMembers' shared deploy+check
-# lifecycle (R3); the driver is an instrument, never check-live'd itself.
+# lifecycle (R2); the driver is an instrument, never check-live'd itself.
 check-cross-pod-cdp:
     pod:
         image: web
@@ -729,8 +729,7 @@ charly-fedora-skill:
             | `devices` | `[/dev/fuse, /dev/net/tun]` (from `/charly-distros:container-nesting`) |
             | `privileged` | `false` |
             
-            See `/charly-openclaw:openclaw-desktop` (streaming-desktop sibling) and
-            `/charly-coder:fedora-coder` (kitchen-sink dev sibling) for other boxes
+            See `/charly-coder:fedora-coder` (kitchen-sink dev sibling) for another box
             sharing this posture, and `/charly-distros:container-nesting` for the
             kernel `mount_too_revealing()` RCA.
             
@@ -840,7 +839,6 @@ charly-fedora-skill:
             - `/charly-distros:fedora` — parent base image
             - `/charly-coder:charly-arch` — Arch counterpart, same layers, same rootless posture
             - `/charly-coder:fedora-coder` — kitchen-sink dev sibling (adds coding CLIs + DevOps)
-            - `/charly-openclaw:openclaw-desktop` — streaming-desktop counterpart (charly toolchain + browser-accessible Wayland); shares the rootless-first posture
             - `/charly-distros:githubrunner` — self-hosted GitHub Actions runner; same uid=1000 posture
             
             ## Related Commands
@@ -950,8 +948,7 @@ fedora-coder-skill:
             Kitchen-sink development box: coding + AI-coding CLIs + DevOps tooling
             in one container. Fedora-nonfree base, direct candies spanning language
             runtimes, build tooling, AI coding CLIs, and the full cloud/devops
-            stack. Runs as uid 1000 with passwordless sudo — rootless-first, matches
-            the /charly-openclaw:openclaw-desktop security posture.
+            stack. Runs as uid 1000 with passwordless sudo — rootless-first.
             Use when working with the fedora-coder box — specifically any task that
             involves SSH-ing into a single container and having every tool a polyglot
             engineer reaches for during a working day already installed.
@@ -962,8 +959,7 @@ fedora-coder-skill:
             
             The everyday-development counterpart to `/charly-distros:charly-fedora`: all the
             coding + AI + DevOps tooling a developer needs in one box, no desktop,
-            no streaming. Distinct from `openclaw-desktop` (which adds the
-            browser-streamed Wayland desktop) — `fedora-coder` is headless and
+            no streaming. `fedora-coder` is headless and
             meant to be accessed via `ssh -p 2222` or `charly shell`.
             
             > **Location:** lives in the **`opencharly/distro-fedora`** repo (git submodule at
@@ -1036,8 +1032,7 @@ fedora-coder-skill:
             
             No `uid:` / `gid:` / `user:` / `security:` override — inherits
             `1000/1000/user` from `defaults` and the candy-level security from
-            `/charly-distros:container-nesting`. Rootless-first by design (shares this
-            posture with `/charly-openclaw:openclaw-desktop`).
+            `/charly-distros:container-nesting`. Rootless-first by design.
             
             ## Resolved security posture (OCI label)
             
@@ -1085,8 +1080,8 @@ fedora-coder-skill:
             `supervisord`, `language-runtimes`, and `uv` all use system python3 from RPM,
             not the conda-forge pixi env, so none of them declares `require: python`.
             System Python is available via `language-runtimes` (`python3-devel` +
-            `python3-ramalama`). See the "Key Rules" note in the project rulebook (`AGENTS.md`) ("don't declare
-            defensive deps").
+            `python3-ramalama`). Don't declare a defensive dependency: a `require:` that nothing in
+            the candy uses is an unproven "to be safe" caution, not a need.
             
             **`uv` is a direct-download binary** (no pixi involvement). Lives at
             `/usr/local/bin/uv` and `/usr/local/bin/uvx`, extracted from the
@@ -1202,7 +1197,6 @@ fedora-coder-skill:
             
             ## Related Boxes
             
-            - `/charly-openclaw:openclaw-desktop` — sibling rootless-first power-user box; same security posture + container-nesting, but adds the streaming desktop. Prefer when you want browser-accessible GUI + dev tools.
             - `/charly-distros:charly-fedora` — minimal charly toolchain (no coding CLIs, no DevOps), also uid=1000 with sudo.
             - `/charly-coder:charly-arch` — Arch Linux counterpart of charly-fedora.
             - `/charly-distros:githubrunner` — self-hosted GitHub Actions runner; same uid=1000 posture.
@@ -1224,7 +1218,7 @@ fedora-coder-skill:
             
             - Building, deploying, or troubleshooting the `fedora-coder` box.
             - Picking the right power-user base image for a coding/dev workload (this
-              vs. `charly-fedora` vs. `charly-arch` vs. `openclaw-desktop`).
+              vs. `charly-fedora` vs. `charly-arch`).
             - Understanding the rootless-first architectural pattern shared by the
               four power-user boxes (kernel RCA belongs in
               `/charly-distros:container-nesting`; the composition that proves it works
@@ -1899,7 +1893,7 @@ tutorial-shell-skill:
             
             **Co-residence is NOT checked here, on purpose.** Every composed candy's plan runs against *this*
             image, so ripgrep's probes and sshd's probes both passing already proves both landed. A box-level
-            `command -v rg && command -v sshd` would duplicate them (R3), and it would pass for the wrong
+            `command -v rg && command -v sshd` would duplicate them (R2), and it would pass for the wrong
             reason — testing the candies rather than the composition. The same applies to the bed, which
             carries no `plan:` of its own.
             
