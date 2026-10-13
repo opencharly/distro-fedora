@@ -509,6 +509,12 @@ check-cross-vm-http:
             Sole proof of cross-KIND local->VM cross-deployment probing — a host local DRIVER member reaches a web SUBJECT inside the bed-root VM via ${HOST:check-cross-vm-http:80}'s ssh -L forward (resolveCheckEndpoint VM branch), zero VM-specific check code. The web-vm subject (disposable Fedora Cloud libvirt VM running cloud-init nginx on guest :80) is the bed root; the host-driver-vm local driver is a sibling member; a curl command step under host-driver-vm (venue=host-driver-vm) against ${HOST:check-cross-vm-http:80} (ssh -L tunnel over the managed charly-check-cross-vm-http alias) asserts the vm fixture marker.
     host-driver-vm:
         local:
+            # Deploy-level sibling of the bed's VM venue, HOST-ROOTED by construction: the DRIVER
+            # must reach ${HOST:check-cross-vm-http:80}'s host-vantage ssh -L forward, which a pod
+            # driver cannot (its own netns). Marked `host: local` so the intent is explicit — the
+            # loader walks a deploy-level member as its OWN root, and without the marking that
+            # landing on the operator's workstation is silent (opencharly/sdk#330).
+            host: local
             from: check-cross-local-driver
             plan:
                 - check: command=curl -fsS http://${HOST:check-cross-vm-http:80}/
@@ -543,6 +549,12 @@ check-cross-local-http:
             Sole proof of cross-KIND local->pod cross-deployment probing — a non-pod local DRIVER member reaches a web SUBJECT pod member via its published port (resolveCheckEndpoint pod branch), the pod-subject twin of check-cross-vm-http. The web SUBJECT pod (nginx :8080) is the bed root; the kind:local host-driver is a sibling member; http-checks the subject marker on the bed root directly, then a curl command step under host-driver (venue=host-driver) against ${HOST:check-cross-local-http:8080} asserts the fixture marker.
     host-driver:
         local:
+            # Deploy-level sibling of the bed's pod venue, HOST-ROOTED by construction: the DRIVER
+            # reaches the subject pod's PUBLISHED port on the host-vantage address, so it is
+            # deliberately host-side. Marked `host: local` so the intent is explicit — the loader
+            # walks a deploy-level member as its OWN root, and without the marking that landing on
+            # the operator's workstation is silent (opencharly/sdk#330).
+            host: local
             from: check-cross-local-driver
             plan:
                 - check: command=curl -fsS http://${HOST:check-cross-local-http:8080}/
