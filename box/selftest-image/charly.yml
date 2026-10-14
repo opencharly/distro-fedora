@@ -3,4 +3,4 @@ selftest-image:
         base: fedora
         candy:
             - '@github.com/opencharly/layer-supervisord:v2026.271.1817'
-            - '@github.com/opencharly/layer-charly:v2026.274.0345'
+            - '@github.com/opencharly/layer-charly:v2026.281.2113'
