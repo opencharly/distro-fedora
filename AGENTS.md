@@ -34,7 +34,7 @@ so the addresses carry no path — do not add one here.
   fine-tuning / Ollama / LLM-course notebooks.
 - `/charly-selkies:sway-browser-vnc` — the minimal Sway + wayvnc + Chrome desktop.
 - `/charly-distros:tutorial-shell`, `/charly-distros:valkey-test` — the teaching
-  shell quoted end to end by opencharly.ai, and the (disabled) Valkey test box.
+  shell quoted end to end by opencharly.ai, and the Valkey test box.
 
 **Authoritative rules live in the `opencharly` superproject's root `AGENTS.md`**
 (R0–R10, hard-cutover, AI attribution, git-workflow). This file only signposts
