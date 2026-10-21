@@ -18,9 +18,11 @@
 #  image that owns one of these skills composes it, so each skill still rides its
 #  own image and now also reaches the label.
 #
-#  THE NODE KEEPS ONLY THE ROUTING (family/owner/triggers).  The prose lives in
-#  `candy/fedora-skills/.agents/skills/<name>/SKILL.md`, which is the path
-#  `deploykit.CollectSkillBodies` reads (`<owner candy SourceDir>/.agents/skills/…`).
+#  THE NODE KEEPS ONLY THE ROUTING (family/owner/triggers).  The prose lives at
+#  THIS REPO'S ROOT, `.agents/skills/<name>/SKILL.md` — the one base both readers
+#  resolve after opencharly/sdk#445 (`deploykit.candyRepoRoot`), NOT beside this
+#  carrier manifest, which is where the sdk#434 re-home had put it and the sdk#445
+#  ruling replaced.
 #  A node-level `description:` is unreachable once that file exists (projectSkill
 #  takes `sf.Description` unconditionally on the file branch), so keeping it would
 #  be the R2 duplication this programme blocks on.
