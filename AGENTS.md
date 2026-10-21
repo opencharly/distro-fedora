@@ -11,12 +11,12 @@ layers**: every candy is an `@github.com/opencharly/<layer-*|pod-*|plugin-*>[:su
 ref from its standalone candy repo, and TWO local candies are discovered via the
 `discover:` block — the `candy/charly-marketplace` closure manifest, and the
 `candy/fedora-skills` skill carrier that owns this repo's ten `skill:` entities
-(their bodies live at `candy/fedora-skills/.agents/skills/<name>/SKILL.md`). Every box's base is a bare
-LOCAL name (`base: fedora` / `fedora-nonfree` / `nvidia`); the distro/builder/init
-build vocabulary is embedded in the `charly` binary. There is NO namespace import
-(`import: []`). Main imports THIS repo under the `fedora` namespace to build the
-relocated boxes; this repo imports nothing back (the former two-way main↔fedora
-import is dissolved).
+(their bodies live at THIS REPO'S ROOT, `.agents/skills/<name>/SKILL.md`). Every
+box's base is a bare LOCAL name (`base: fedora` / `fedora-nonfree` / `nvidia`); the
+distro/builder/init build vocabulary is embedded in the `charly` binary. There is NO
+namespace import (`import: []`). Main imports THIS repo under the `fedora` namespace
+to build the relocated boxes; this repo imports nothing back (the former two-way
+main↔fedora import is dissolved).
 
 Each skill's prose is authored here, in the skill's own file; the `charly.yml`
 `skill:` node keeps only the routing (`name`/`family`/`owner`/`triggers`). The
