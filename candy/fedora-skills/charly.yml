@@ -40,8 +40,15 @@ fedora-skills:
               command: "true"
               context:
                 - build
-            - check: the ten fedora skill bodies resolve under this carrier's .agents/skills tree and every owning image composes this candy
-              id: fedora-skills-present
+            # ADE wants a deterministic `check:`, and this carrier genuinely has nothing to
+            # assert INSIDE the image: it ships no install content, and its payload (the ten
+            # `SKILL.md` files) is read at build-config time from the source tree, never copied
+            # into the image. The prose below therefore says exactly that and no more — an
+            # earlier draft claimed it verified body resolution, which `true` cannot do; that
+            # resolution is really covered by `charly box validate` (deploykit.CollectSkillBodies),
+            # whose negative control is the mutation recorded in this PR.
+            - check: this carrier registers as a candy and ships no install content — its skill bodies are validated at build-config time by `charly box validate`, not inside the image
+              id: fedora-skills-no-install-content
               context:
                 - build
               command: "true"
