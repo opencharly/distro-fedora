@@ -27,9 +27,12 @@ This repo owns its bases and build targets locally, but **vendors no shared cand
 - the Fedora base/builder stack (`fedora` → `fedora-nonfree` → `fedora-builder`)
   and the GPU base (`nvidia` / `python-ml`) are **local boxes** under `box/`,
   referenced by bare name (`base: fedora`, `base: nvidia`);
-- every candy is an `@github.com/opencharly/<layer-*|pod-*|plugin-*>[:subdir]:<tag>`
-  ref into its standalone candy repo — the one local candy
-  (`candy/charly-marketplace`) is discovered via the `discover:` block;
+- every shared candy is an `@github.com/opencharly/<layer-*|pod-*|plugin-*>[:subdir]:<tag>`
+  ref into its standalone candy repo — TWO local candies are discovered via the
+  `discover:` block: `candy/charly-marketplace` (the closure of refs those images
+  resolve against) and `candy/fedora-skills` (the skill carrier that owns this
+  repo's ten `skill:` entities, so each skill's prose is readable and reaches
+  `ai.opencharly.skill` — opencharly/sdk#434);
 - the distro/builder/init build vocabulary is embedded in the `charly` binary
   (no remote build-config import).
 
