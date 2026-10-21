@@ -1,0 +1,123 @@
+#  opencharly/distro-fedora — the skill carrier for this repo.
+#
+#  WHY THIS CANDY EXISTS (opencharly/sdk#434, the operator's extended ruling):
+#  the ten `fedora*` skill nodes were owned by IMAGES (`owner: fedora`,
+#  `owner: fedora-coder`, …).  A `candy:` node carrying `base:`/`from:` folds into
+#  the image set and has no source directory, so the prose of an image-owned skill
+#  can never be read — and, because CollectSkills keeps only nodes whose owner is in
+#  the composed candy chain, those ten were SILENTLY ABSENT from every image's
+#  `ai.opencharly.skill` label.  Measured: 16 of 17 image-owned nodes in this
+#  programme have no local package candy to re-home to, and five of these images
+#  compose zero candies, so "re-home to a candy the image already composes" is
+#  impossible.  This carrier is the package candy the ruling authorises.
+#
+#  THE SHAPE is completed from `opencharly/distro-cachyos`'s own precedent (its
+#  `candy/cachyos-{app,os,selkies}-skills` carriers), which held skill nodes but
+#  declared no `candy:` node — so `candy: [cachyos-os-skills]` failed with
+#  `candy "…" not found`.  Here the carrier declares a real `candy:` node, and EVERY
+#  image that owns one of these skills composes it, so each skill still rides its
+#  own image and now also reaches the label.
+#
+#  THE NODE KEEPS ONLY THE ROUTING (family/owner/triggers).  The prose lives in
+#  `candy/fedora-skills/.agents/skills/<name>/SKILL.md`, which is the path
+#  `deploykit.CollectSkillBodies` reads (`<owner candy SourceDir>/.agents/skills/…`).
+#  A node-level `description:` is unreachable once that file exists (projectSkill
+#  takes `sf.Description` unconditionally on the file branch), so keeping it would
+#  be the R2 duplication this programme blocks on.
+fedora-skills:
+    candy:
+        description: |-
+            The Fedora skill carrier: the package candy that OWNS the ten `fedora*` skill
+            entities (`fedora`, `fedora-builder`, `fedora-nonfree`, `fedora-coder`,
+            `fedora-test`, `charly-fedora`, `jupyter-ml-notebook`, `sway-browser-vnc`,
+            `tutorial-shell`, `valkey-test`).  It ships no install content — its payload is
+            the skill prose under `.agents/skills/`, read at build time by the skill
+            collector — and it exists because a skill's `owner:` must name a candy that
+            rides an image, not the image itself (opencharly/sdk#434).  Composed by every
+            Fedora image that owns one of those skills.
+        plan:
+            - run: this skill-carrier candy ships no install content
+              command: "true"
+              context:
+                - build
+            # ADE wants a deterministic `check:`, and this carrier genuinely has nothing to
+            # assert INSIDE the image: it ships no install content, and its payload (the ten
+            # `SKILL.md` files) is read at build-config time from the source tree, never copied
+            # into the image. The prose below therefore says exactly that and no more — an
+            # earlier draft claimed it verified body resolution, which `true` cannot do; that
+            # resolution is really covered by `charly box validate` (deploykit.CollectSkillBodies),
+            # whose negative control is the mutation recorded in this PR.
+            - check: this carrier registers as a candy and ships no install content — its skill bodies are validated at build-config time by `charly box validate`, not inside the image
+              id: fedora-skills-no-install-content
+              context:
+                - build
+              command: "true"
+
+charly-fedora-skill:
+    skill:
+        name: charly-fedora
+        family: distros
+        owner: fedora-skills
+        triggers:
+            - "Fedora images / `fedora*` / `box/fedora` submodule (incl. the GPU base `nvidia` / `python-ml` + `sway-browser-vnc`)"
+
+fedora-builder-skill:
+    skill:
+        name: fedora-builder
+        family: distros
+        owner: fedora-skills
+        triggers:
+            - "Fedora images / `fedora*` / `box/fedora` submodule (incl. the GPU base `nvidia` / `python-ml` + `sway-browser-vnc`)"
+
+fedora-coder-skill:
+    skill:
+        name: fedora-coder
+        family: coder
+        owner: fedora-skills
+        triggers:
+            - "Fedora images / `fedora*` / `box/fedora` submodule (incl. the GPU base `nvidia` / `python-ml` + `sway-browser-vnc`)"
+
+fedora-nonfree-skill:
+    skill:
+        name: fedora-nonfree
+        family: distros
+        owner: fedora-skills
+        triggers:
+            - "Fedora images / `fedora*` / `box/fedora` submodule (incl. the GPU base `nvidia` / `python-ml` + `sway-browser-vnc`)"
+
+fedora-skill:
+    skill:
+        name: fedora
+        family: distros
+        owner: fedora-skills
+        triggers:
+            - "Fedora images / `fedora*` / `box/fedora` submodule (incl. the GPU base `nvidia` / `python-ml` + `sway-browser-vnc`)"
+
+fedora-test-skill:
+    skill:
+        name: fedora-test
+        family: distros
+        owner: fedora-skills
+        triggers:
+            - "Fedora images / `fedora*` / `box/fedora` submodule (incl. the GPU base `nvidia` / `python-ml` + `sway-browser-vnc`)"
+
+jupyter-ml-notebook-skill:
+    skill:
+        name: jupyter-ml-notebook
+        family: jupyter
+        owner: fedora-skills
+sway-browser-vnc-skill:
+    skill:
+        name: sway-browser-vnc
+        family: selkies
+        owner: fedora-skills
+tutorial-shell-skill:
+    skill:
+        name: tutorial-shell
+        family: distros
+        owner: fedora-skills
+valkey-test-skill:
+    skill:
+        name: valkey-test
+        family: distros
+        owner: fedora-skills
