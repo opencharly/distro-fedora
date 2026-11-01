@@ -19,6 +19,9 @@ tutorial-shell:
             plans running against this same image, so the box does not restate it.
         base: fedora
         candy:
+            # The Fedora skill carrier this image owns its skill in — see candy/fedora-skills/charly.yml
+            - fedora-skills
+
             - '@github.com/opencharly/layer-supervisord:v2026.271.1817'
             - '@github.com/opencharly/layer-ripgrep:v2026.235.1653'
             - '@github.com/opencharly/pod-sshd:v2026.272.0324'

@@ -4,6 +4,9 @@ jupyter-ml-notebook:
         platform:
             - linux/amd64
         candy:
+            # The Fedora skill carrier this image owns its skill in — see candy/fedora-skills/charly.yml
+            - fedora-skills
+
             - '@github.com/opencharly/layer-agent-forwarding:v2026.274.0608'
             - '@github.com/opencharly/pod-jupyter-ml:v2026.274.0802'
             - '@github.com/opencharly/layer-notebook-templates:v2026.272.0457'

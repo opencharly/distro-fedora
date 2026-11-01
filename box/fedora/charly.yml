@@ -12,3 +12,6 @@ fedora:
         distro:
             - fedora:43
             - fedora
+        candy:
+            # The Fedora skill carrier this image owns its skill in — see candy/fedora-skills/charly.yml
+            - fedora-skills

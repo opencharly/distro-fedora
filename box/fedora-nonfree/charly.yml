@@ -13,4 +13,7 @@ fedora-nonfree:
             npm: fedora-builder
             pixi: fedora-builder
         candy:
+            # The Fedora skill carrier this image owns its skill in — see candy/fedora-skills/charly.yml
+            - fedora-skills
+
             - '@github.com/opencharly/layer-rpmfusion:v2026.272.0429'

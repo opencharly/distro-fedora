@@ -8,15 +8,22 @@ relocated Fedora-rooted app/fixture boxes (jupyter, jupyter-ml, comfyui, ollama,
 unsloth-studio, immich, immich-ml, openwebui, hermes, web, check-pod, redis,
 tier1/tier23, …) — all discovered under `box/`. It vendors **no shared candy
 layers**: every candy is an `@github.com/opencharly/<layer-*|pod-*|plugin-*>[:subdir]:<tag>`
-ref from its standalone candy repo, and the one local `candy/charly-marketplace`
-closure manifest is discovered via the `discover:` block. Every box's base is a bare
-LOCAL name (`base: fedora` / `fedora-nonfree` / `nvidia`); the distro/builder/init
-build vocabulary is embedded in the `charly` binary. There is NO namespace import
-(`import: []`). Main imports THIS repo under the `fedora` namespace to build the
-relocated boxes; this repo imports nothing back (the former two-way main↔fedora
-import is dissolved).
+ref from its standalone candy repo, and TWO local candies are discovered via the
+`discover:` block — the `candy/charly-marketplace` closure manifest, and the
+`candy/fedora-skills` skill carrier that owns this repo's ten `skill:` entities
+(their bodies live at THIS REPO'S ROOT, `.agents/skills/<name>/SKILL.md`). Every
+box's base is a bare LOCAL name (`base: fedora` / `fedora-nonfree` / `nvidia`); the
+distro/builder/init build vocabulary is embedded in the `charly` binary. There is NO
+namespace import (`import: []`). Main imports THIS repo under the `fedora` namespace
+to build the relocated boxes; this repo imports nothing back (the former two-way
+main↔fedora import is dissolved).
 
-**Load these skills FIRST (R0):**
+Each skill's prose is authored here, in the skill's own file; the `charly.yml`
+`skill:` node keeps only the routing (`name`/`family`/`owner`/`triggers`). The
+harness discovers the file natively and resolves it from the address form below,
+so the addresses carry no path — do not add one here.
+
+## Load these skills first (R0)
 
 - `/charly-distros:fedora` — the Fedora 43 base image; root of the RPM hierarchy.
 - `/charly-distros:fedora-builder`, `/charly-distros:fedora-nonfree`,
@@ -25,7 +32,11 @@ import is dissolved).
 - `/charly-coder:fedora-coder` — the dev image.
 - `/charly-distros:nvidia`, `/charly-distros:cuda` — the Fedora GPU base (`nvidia`
   box) + CUDA toolkit; `python-ml` builds on it.
+- `/charly-jupyter:jupyter-ml-notebook` — the CUDA ML JupyterLab box with the
+  fine-tuning / Ollama / LLM-course notebooks.
 - `/charly-selkies:sway-browser-vnc` — the minimal Sway + wayvnc + Chrome desktop.
+- `/charly-distros:tutorial-shell`, `/charly-distros:valkey-test` — the teaching
+  shell quoted end to end by opencharly.ai, and the Valkey test box.
 
 **Authoritative rules live in the `opencharly` superproject's root `AGENTS.md`**
 (R0–R10, hard-cutover, AI attribution, git-workflow). This file only signposts
