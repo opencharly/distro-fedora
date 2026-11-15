@@ -8,10 +8,15 @@ relocated Fedora-rooted app/fixture boxes (jupyter, jupyter-ml, comfyui, ollama,
 unsloth-studio, immich, immich-ml, openwebui, hermes, web, check-pod, redis,
 tier1/tier23, …) — all discovered under `box/`. It vendors **no shared candy
 layers**: every candy is an `@github.com/opencharly/<layer-*|pod-*|plugin-*>[:subdir]:<tag>`
-ref from its standalone candy repo, and TWO local candies are discovered via the
-`discover:` block — the `candy/charly-marketplace` closure manifest, and the
-`candy/fedora-skills` skill carrier that owns this repo's ten `skill:` entities
-(their bodies live at THIS REPO'S ROOT, `.agents/skills/<name>/SKILL.md`). Every
+ref from its standalone candy repo, and ONE local candy is discovered via the
+`discover:` block — the `candy/fedora-skills` skill carrier that owns this repo's ten
+`skill:` entities (their bodies live at THIS REPO'S ROOT, `.agents/skills/<name>/SKILL.md`).
+A second local candy, `candy/charly-marketplace`, used to hold a list of closure refs the
+images resolved bare names against; it was deleted because it drifted and could name a tag
+that no longer exists, which aborted the corpus generator for every consumer
+(opencharly/marketplace#613). The closure is not vendored here: each `@github` ref's own
+manifest declares its requires, and the bare names this repo still composes resolve from
+the local builder boxes. Every
 box's base is a bare LOCAL name (`base: fedora` / `fedora-nonfree` / `nvidia`); the
 distro/builder/init build vocabulary is embedded in the `charly` binary. There is NO
 namespace import (`import: []`). Main imports THIS repo under the `fedora` namespace

@@ -28,11 +28,14 @@ This repo owns its bases and build targets locally, but **vendors no shared cand
   and the GPU base (`nvidia` / `python-ml`) are **local boxes** under `box/`,
   referenced by bare name (`base: fedora`, `base: nvidia`);
 - every shared candy is an `@github.com/opencharly/<layer-*|pod-*|plugin-*>[:subdir]:<tag>`
-  ref into its standalone candy repo — TWO local candies are discovered via the
-  `discover:` block: `candy/charly-marketplace` (the closure of refs those images
-  resolve against) and `candy/fedora-skills` (the skill carrier that owns this
-  repo's ten `skill:` entities, so each skill's prose is readable and reaches
-  `ai.opencharly.skill` — opencharly/sdk#434);
+  ref into its standalone candy repo — ONE local candy is discovered via the
+  `discover:` block: `candy/fedora-skills` (the skill carrier that owns this repo's
+  ten `skill:` entities, so each skill's prose is readable and reaches
+  `ai.opencharly.skill` — opencharly/sdk#434). A local copy of
+  opencharly/marketplace's refs list at `candy/charly-marketplace` was deleted: it
+  drifted and could name a deleted tag, aborting the corpus generator
+  (opencharly/marketplace#613), and the closure resolves transitively from each
+  `@github` ref's own manifest;
 - the distro/builder/init build vocabulary is embedded in the `charly` binary
   (no remote build-config import).
 
