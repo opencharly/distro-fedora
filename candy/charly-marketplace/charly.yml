@@ -132,7 +132,15 @@ charly-marketplace:
             - '@github.com/opencharly/layer-xurl:v2026.274.0644'
             - '@github.com/opencharly/layer-yay:v2026.272.0425'
             - '@github.com/opencharly/layer-agent-forwarding:v2026.274.0608'
-            - '@github.com/opencharly/layer-agentteams:v2026.274.2144'
+            # ADVANCED deliberately, alone: the pre-fix tag's box/cachyos-base still pins
+            # distro-cachyos/candy/cachyos-base-check at a v2026.274 tag whose tree carries
+            # box/crabbox-e2e -> the DELETED pod-crabbox:v2026.274.0652, which is one of the four
+            # live carriers filed as opencharly/charly#1156. v2026.319.1239 is the tag that fixed
+            # it (opencharly/layer-agentteams#25). The rest of this 150-pin closure is deliberately
+            # NOT refreshed in the same change: a full `refresh-refs.sh` here advances pins to
+            # repos/candies this project cannot resolve (measured: `unknown candy
+            # github.com/opencharly/pod-dsh`), which is a separate defect and is reported on #1156.
+            - '@github.com/opencharly/layer-agentteams:v2026.319.1239'
             - '@github.com/opencharly/layer-charly-ollama:v2026.271.2233'
             - '@github.com/opencharly/pod-cloud-init:v2026.274.0646'
             - '@github.com/opencharly/layer-google-cloud-npm:v2026.273.1835'
