@@ -84,7 +84,7 @@ check-openwebui-pod:
             # serves — not what the pixi lock installs. When the pin advances, this line
             # advances with it in the same change, which is exactly the coupling that was
             # missing while the pin sat three releases behind.
-            - check: the running service serves the open-webui version this box pins (0.12.3), read from its own /api/config
+            - check: the running service serves the open-webui version this box pins (0.13.3), read from its own /api/config
               id: openwebui-served-version
               context:
                 - runtime
@@ -95,7 +95,87 @@ check-openwebui-pod:
                 http: http://127.0.0.1:${HOST_PORT:8080}/api/config
                 status: 200
                 body:
-                  - contains: '"version":"0.12.3"'
+                  - contains: '"version":"0.13.3"'
+# check-openwebui-qdrant-pod — the disposable witness for the Qdrant vector store: the
+# openwebui-qdrant image runs Open WebUI and Qdrant in ONE deploy, exactly as the two-pod
+# production shape does (the qdrant layer's env_provide is rewritten to localhost by the
+# same-deploy rule), so the whole provide/secret contract is exercised without needing two
+# separately-built images in one bed. Nothing here re-asserts the service, HTTP or admin
+# checks — those belong to the openwebui candy (and check-openwebui-pod).
+check-openwebui-qdrant-pod:
+    pod:
+        image: openwebui-qdrant
+        disposable: true
+        lifecycle: dev
+        description: Sole proof of the Qdrant RAG vector store contract — the openwebui-qdrant image (Open WebUI + Qdrant composed on the Fedora base) deployed as a disposable pod. Asserts the served open-webui version, then that Open WebUI's own container reaches the Qdrant server with the credential the secret_accept injected and that a collection written with that credential is listed by the server. Carries no port pin, so concurrent runs cannot collide with a production deploy.
+        env:
+            WEBUI_ADMIN_EMAIL: admin@openwebui-qdrant.example
+        plan:
+            - check: the running service serves the open-webui version the composed candy pins (0.13.3), read from its own /api/config
+              id: openwebui-qdrant-served-version
+              context:
+                - runtime
+              timeout: 30s
+              eventually: 3m
+              retry_interval: 2s
+              http:
+                http: http://127.0.0.1:${HOST_PORT:8080}/api/config
+                status: 200
+                body:
+                  - contains: '"version":"0.13.3"'
+            # The provide's name is QDRANT_URL; the entrypoint maps it onto QDRANT_URI inside
+            # the service process. An exec-side probe therefore sees QDRANT_URL and the key,
+            # not VECTOR_DB/QDRANT_URI — so it exercises exactly what the entrypoint consumed.
+            - check: Open WebUI's container reaches the Qdrant server with the credential the secret_accept injected, at the URL the env_provide supplied
+              id: openwebui-qdrant-reachable
+              context:
+                - runtime
+              eventually: 3m
+              retry_interval: 5s
+              stdout:
+                - contains: "QDRANT_OK url=http://localhost:6333 status=200"
+              command:
+                command: |
+                  export QURL="$QDRANT_URL"
+                  export QKEY="$QDRANT_API_KEY"
+                  /home/user/.pixi/envs/default/bin/python -c '
+                  import os, urllib.request
+                  url = os.environ["QURL"].rstrip("/") + "/collections"
+                  req = urllib.request.Request(url, headers={"api-key": os.environ["QKEY"]})
+                  with urllib.request.urlopen(req, timeout=10) as r:
+                      print("QDRANT_OK url=" + os.environ["QURL"] + " status=" + str(r.status))
+                  '
+                in_container: true
+            - check: a collection written through Open WebUI's own credential is listed back by the same Qdrant server
+              id: openwebui-qdrant-write
+              context:
+                - runtime
+              timeout: 120s
+              stdout:
+                - contains: "open-webui_probe"
+              command:
+                command: |
+                  export QURL="$QDRANT_URL"
+                  export QKEY="$QDRANT_API_KEY"
+                  /home/user/.pixi/envs/default/bin/python -c '
+                  import os, json, urllib.request, urllib.error
+                  base = os.environ["QURL"].rstrip("/")
+                  h = {"api-key": os.environ["QKEY"], "content-type": "application/json"}
+                  name = "open-webui_probe"
+                  try:
+                      urllib.request.urlopen(urllib.request.Request(base + "/collections/" + name, headers=h), timeout=10).read()
+                      print("probe_exists=1")
+                  except urllib.error.HTTPError as e:
+                      if e.code != 404:
+                          raise
+                      body = json.dumps({"vectors": {"size": 384, "distance": "Cosine"}}).encode()
+                      urllib.request.urlopen(urllib.request.Request(base + "/collections/" + name, data=body, headers=h, method="PUT"), timeout=10).read()
+                      print("probe_created=1")
+                  with urllib.request.urlopen(urllib.request.Request(base + "/collections", headers=h), timeout=10) as r:
+                      print("COLLECTIONS=" + r.read(400).decode())
+                  '
+                in_container: true
+
 # check-tutorial-shell — the bed that keeps the DOCUMENTED example honest.
 # box/tutorial-shell is the box quoted end to end in opencharly.ai's quickstart and
 # concepts pages. Because the site excerpts it rather than paraphrasing it, this bed
