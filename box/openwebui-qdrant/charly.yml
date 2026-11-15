@@ -1,0 +1,12 @@
+# The openwebui-qdrant BOX — Open Web UI with Qdrant as its RAG vector store, in ONE image.
+# The qdrant layer's env_provide (`QDRANT_URL`) is rewritten to localhost by the same-deploy
+# rule, and its secret_require key (`charly/api-key/qdrant`) is consumed by the openwebui
+# candy's secret_accept — so the provide/secret contract is identical to the two-pod shape,
+# with no deploy ordering to get wrong.
+# Build: `charly box build openwebui-qdrant`.  Probe: `charly check run check-openwebui-qdrant-pod`.
+openwebui-qdrant:
+  candy:
+    base: fedora
+    candy:
+      - '@github.com/opencharly/pod-openwebui:v2026.319.0943'
+      - '@github.com/opencharly/layer-qdrant:v2026.314.0709'
