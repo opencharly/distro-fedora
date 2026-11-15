@@ -84,7 +84,7 @@ check-openwebui-pod:
             # serves — not what the pixi lock installs. When the pin advances, this line
             # advances with it in the same change, which is exactly the coupling that was
             # missing while the pin sat three releases behind.
-            - check: the running service serves the open-webui version this box pins (0.12.3), read from its own /api/config
+            - check: the running service serves the open-webui version this box pins (0.13.3), read from its own /api/config
               id: openwebui-served-version
               context:
                 - runtime
@@ -95,48 +95,86 @@ check-openwebui-pod:
                 http: http://127.0.0.1:${HOST_PORT:8080}/api/config
                 status: 200
                 body:
-                  - contains: '"version":"0.12.3"'
-# check-nvidia-pod — the DISPOSABLE proof of the GPU BASE every GPU image composes.
-#
-# This bed exists because the base had no gate of its own: a stale layer-cuda pin (which
-# named `cuda-cccl-devel`, a package no enabled repo provides) sat green in review and red
-# in reality, and the defect only surfaced when an unrelated feature tried to base on it
-# (#110). The bed's IMAGE-BUILD step is that missing gate — with the old pin the dnf
-# transaction fails there, before any probe runs — and the probes then assert the piece
-# that actually broke: the CCCL headers the package provides.
-check-nvidia-pod:
+                  - contains: '"version":"0.13.3"'
+# check-openwebui-qdrant-pod — the disposable witness for the Qdrant vector store: the
+# openwebui-qdrant image runs Open WebUI and Qdrant in ONE deploy, exactly as the two-pod
+# production shape does (the qdrant layer's env_provide is rewritten to localhost by the
+# same-deploy rule), so the whole provide/secret contract is exercised without needing two
+# separately-built images in one bed. Nothing here re-asserts the service, HTTP or admin
+# checks — those belong to the openwebui candy (and check-openwebui-pod).
+check-openwebui-qdrant-pod:
     pod:
-        image: nvidia
+        image: openwebui-qdrant
         disposable: true
         lifecycle: dev
-        # GPU-CDI pod on the REFCOUNTED axis (never requires_exclusive: the exclusive
-        # axis attempts a vfio flip a live desktop compositor correctly refuses).
-        requires_shared: [nvidia-gpu]
-        description: >-
-            Sole proof of the `nvidia` base — the GPU image every GPU box composes (comfyui,
-            immich-ml, jupyter-ml, ollama-cuda, python-ml, sway-browser-vnc). Builds it, which is
-            the exact step that failed while the base pinned a layer-cuda naming `cuda-cccl-devel`
-            (#110), then deploys it and asserts the toolchain the transaction installs: nvcc reports
-            its release and the CCCL headers the broken package provides are present under
-            /usr/include. Run on demand; it needs the GPU venue.
+        description: Sole proof of the Qdrant RAG vector store contract — the openwebui-qdrant image (Open WebUI + Qdrant composed on the Fedora base) deployed as a disposable pod. Asserts the served open-webui version, then that Open WebUI's own container reaches the Qdrant server with the credential the secret_accept injected and that a collection written with that credential is listed by the server. Carries no port pin, so concurrent runs cannot collide with a production deploy.
+        env:
+            WEBUI_ADMIN_EMAIL: admin@openwebui-qdrant.example
         plan:
-            - check: the CUDA compiler driver in the built base reports its release
-              id: nvidia-nvcc-release
-              context:
-                - runtime
-              timeout: 60s
-              exit_status: 0
-              stdout:
-                - contains: release
-              command: nvcc --version
-            - check: the CCCL package the base now resolves is installed
-              id: nvidia-cccl-package
+            - check: the running service serves the open-webui version the composed candy pins (0.13.3), read from its own /api/config
+              id: openwebui-qdrant-served-version
               context:
                 - runtime
               timeout: 30s
-              package:
-                package: cccl-devel
-                installed: true
+              eventually: 3m
+              retry_interval: 2s
+              http:
+                http: http://127.0.0.1:${HOST_PORT:8080}/api/config
+                status: 200
+                body:
+                  - contains: '"version":"0.13.3"'
+            # The provide's name is QDRANT_URL; the entrypoint maps it onto QDRANT_URI inside
+            # the service process. An exec-side probe therefore sees QDRANT_URL and the key,
+            # not VECTOR_DB/QDRANT_URI — so it exercises exactly what the entrypoint consumed.
+            - check: Open WebUI's container reaches the Qdrant server with the credential the secret_accept injected, at the URL the env_provide supplied
+              id: openwebui-qdrant-reachable
+              context:
+                - runtime
+              eventually: 3m
+              retry_interval: 5s
+              stdout:
+                - contains: "QDRANT_OK url=http://localhost:6333 status=200"
+              command:
+                command: |
+                  export QURL="$QDRANT_URL"
+                  export QKEY="$QDRANT_API_KEY"
+                  /home/user/.pixi/envs/default/bin/python -c '
+                  import os, urllib.request
+                  url = os.environ["QURL"].rstrip("/") + "/collections"
+                  req = urllib.request.Request(url, headers={"api-key": os.environ["QKEY"]})
+                  with urllib.request.urlopen(req, timeout=10) as r:
+                      print("QDRANT_OK url=" + os.environ["QURL"] + " status=" + str(r.status))
+                  '
+                in_container: true
+            - check: a collection written through Open WebUI's own credential is listed back by the same Qdrant server
+              id: openwebui-qdrant-write
+              context:
+                - runtime
+              timeout: 120s
+              stdout:
+                - contains: "open-webui_probe"
+              command:
+                command: |
+                  export QURL="$QDRANT_URL"
+                  export QKEY="$QDRANT_API_KEY"
+                  /home/user/.pixi/envs/default/bin/python -c '
+                  import os, json, urllib.request, urllib.error
+                  base = os.environ["QURL"].rstrip("/")
+                  h = {"api-key": os.environ["QKEY"], "content-type": "application/json"}
+                  name = "open-webui_probe"
+                  try:
+                      urllib.request.urlopen(urllib.request.Request(base + "/collections/" + name, headers=h), timeout=10).read()
+                      print("probe_exists=1")
+                  except urllib.error.HTTPError as e:
+                      if e.code != 404:
+                          raise
+                      body = json.dumps({"vectors": {"size": 384, "distance": "Cosine"}}).encode()
+                      urllib.request.urlopen(urllib.request.Request(base + "/collections/" + name, data=body, headers=h, method="PUT"), timeout=10).read()
+                      print("probe_created=1")
+                  with urllib.request.urlopen(urllib.request.Request(base + "/collections", headers=h), timeout=10) as r:
+                      print("COLLECTIONS=" + r.read(400).decode())
+                  '
+                in_container: true
 
 # check-tutorial-shell — the bed that keeps the DOCUMENTED example honest.
 # box/tutorial-shell is the box quoted end to end in opencharly.ai's quickstart and
@@ -740,3 +778,111 @@ discover:
       recursive: true
     - path: candy
       recursive: true
+
+# check-whisper-pod — the KEYLESS posture of the served ASR engine. Sole proof of the
+# whisper image: builds it from the released candy tag, deploys it as a disposable pod,
+# and runs the candy's own baked checks (health, OpenAI-shaped model list, a real
+# transcription of the committed fixture, and the 400 arm for a model it does not serve).
+# It carries no plan of its own on purpose: every live claim here is the composed candy's
+# check, so a bed plan could only duplicate it (R2).
+check-whisper-pod:
+    pod:
+        image: whisper
+        disposable: true
+        lifecycle: dev
+        description: >-
+                Sole proof of the whisper image — the OpenAI-compatible ASR engine on the Fedora base. Builds the image from `layer-whisper:v2026.318.2328`, deploys it as a disposable pod, and runs the candy's baked checks — the service answers /health, it advertises an OpenAI-shaped model list, it transcribes the committed fixture, and a model it does not serve is refused with a 400 naming both. The keyed posture is proven separately by check-whisper-auth, because a baked check cannot assert 401 on a keyless deployment.
+
+# check-whisper-auth — the KEYED posture. A baked candy check cannot assert 401 (the default
+# deployment is keyless, where 401 would be wrong), so the keyed arm needs a deployment that
+# configures a key. This bed asserts BOTH directions, which is what proves the forwarding
+# branch is not dead code.
+check-whisper-auth:
+    pod:
+        image: whisper
+        disposable: true
+        lifecycle: dev
+        description: >-
+                Sole proof of the whisper image's KEYED auth posture — a disposable pod deployed with WHISPER_API_KEY set. Asserts both directions — an unauthenticated transcription request is refused with 401, and the same request carrying the correct bearer is served the fixture's transcript. Without this bed the 401 branch has no check that fails when it is removed.
+        env:
+            WHISPER_API_KEY: check-bed-probe-key
+        plan:
+            - check: a keyed deployment refuses an unauthenticated request
+              id: auth-refuses-anonymous
+              context:
+                - runtime
+              timeout: 300s
+              eventually: 5m
+              retry_interval: 5s
+              exit_status: 0
+              stdout:
+                - contains: "401"
+              command: |
+                curl -s -o /dev/null -w '%{http_code}' \
+                     -F file=@"${HOME}/whisper-asr/fixtures/jfk.flac" \
+                     http://127.0.0.1:9000/v1/audio/transcriptions
+            - check: a keyed deployment serves the request that carries the correct bearer
+              id: auth-accepts-bearer
+              context:
+                - runtime
+              timeout: 300s
+              eventually: 5m
+              retry_interval: 5s
+              exit_status: 0
+              stdout:
+                - contains: "fellow Americans"
+              command: |
+                curl -sf -H "Authorization: Bearer check-bed-probe-key" \
+                     -F file=@"${HOME}/whisper-asr/fixtures/jfk.flac" \
+                     http://127.0.0.1:9000/v1/audio/transcriptions
+
+# NOTE — there is deliberately NO joint `check-whisper-*-pod` bed here.
+# A bed that drives the Open WebUI container through the whisper container cannot currently be
+# expressed: a sibling member gets its own network (container DNS does not resolve across the two,
+# and ${HOST:<bed>:<port>} is host loopback, unreachable from inside a container), and nesting the
+# two makes the `command:` verb panic in the check-env path. All three shapes are measured and filed
+# as opencharly/charly#1153. The integration is instead carried by the beds above (the engine's own
+# behaviour, keyless and keyed), the consumer candy's committed projection stubs, and a live
+# two-deployment run where container-name DNS does work.
+
+# check-nvidia-pod — the DISPOSABLE proof of the GPU BASE every GPU image composes.
+#
+# This bed exists because the base had no gate of its own: a stale layer-cuda pin (which
+# named `cuda-cccl-devel`, a package no enabled repo provides) sat green in review and red
+# in reality, and the defect only surfaced when an unrelated feature tried to base on it
+# (#110). The bed's IMAGE-BUILD step is that missing gate — with the old pin the dnf
+# transaction fails there, before any probe runs — and the probes then assert the piece
+# that actually broke: the CCCL headers the package provides.
+check-nvidia-pod:
+    pod:
+        image: nvidia
+        disposable: true
+        lifecycle: dev
+        # GPU-CDI pod on the REFCOUNTED axis (never requires_exclusive: the exclusive
+        # axis attempts a vfio flip a live desktop compositor correctly refuses).
+        requires_shared: [nvidia-gpu]
+        description: >-
+            Sole proof of the `nvidia` base — the GPU image every GPU box composes (comfyui,
+            immich-ml, jupyter-ml, ollama-cuda, python-ml, sway-browser-vnc). Builds it, which is
+            the exact step that failed while the base pinned a layer-cuda naming `cuda-cccl-devel`
+            (#110), then deploys it and asserts the toolchain the transaction installs: nvcc reports
+            its release and the CCCL headers the broken package provides are present under
+            /usr/include. Run on demand; it needs the GPU venue.
+        plan:
+            - check: the CUDA compiler driver in the built base reports its release
+              id: nvidia-nvcc-release
+              context:
+                - runtime
+              timeout: 60s
+              exit_status: 0
+              stdout:
+                - contains: release
+              command: nvcc --version
+            - check: the CCCL package the base now resolves is installed
+              id: nvidia-cccl-package
+              context:
+                - runtime
+              timeout: 30s
+              package:
+                package: cccl-devel
+                installed: true
