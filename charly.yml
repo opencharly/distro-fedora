@@ -96,6 +96,48 @@ check-openwebui-pod:
                 status: 200
                 body:
                   - contains: '"version":"0.12.3"'
+# check-nvidia-pod — the DISPOSABLE proof of the GPU BASE every GPU image composes.
+#
+# This bed exists because the base had no gate of its own: a stale layer-cuda pin (which
+# named `cuda-cccl-devel`, a package no enabled repo provides) sat green in review and red
+# in reality, and the defect only surfaced when an unrelated feature tried to base on it
+# (#110). The bed's IMAGE-BUILD step is that missing gate — with the old pin the dnf
+# transaction fails there, before any probe runs — and the probes then assert the piece
+# that actually broke: the CCCL headers the package provides.
+check-nvidia-pod:
+    pod:
+        image: nvidia
+        disposable: true
+        lifecycle: dev
+        # GPU-CDI pod on the REFCOUNTED axis (never requires_exclusive: the exclusive
+        # axis attempts a vfio flip a live desktop compositor correctly refuses).
+        requires_shared: [nvidia-gpu]
+        description: >-
+            Sole proof of the `nvidia` base — the GPU image every GPU box composes (comfyui,
+            immich-ml, jupyter-ml, ollama-cuda, python-ml, sway-browser-vnc). Builds it, which is
+            the exact step that failed while the base pinned a layer-cuda naming `cuda-cccl-devel`
+            (#110), then deploys it and asserts the toolchain the transaction installs: nvcc reports
+            its release and the CCCL headers the broken package provides are present under
+            /usr/include. Run on demand; it needs the GPU venue.
+        plan:
+            - check: the CUDA compiler driver in the built base reports its release
+              id: nvidia-nvcc-release
+              context:
+                - runtime
+              timeout: 60s
+              exit_status: 0
+              stdout:
+                - contains: release
+              command: nvcc --version
+            - check: the CCCL package the base now resolves is installed
+              id: nvidia-cccl-package
+              context:
+                - runtime
+              timeout: 30s
+              package:
+                package: cccl-devel
+                installed: true
+
 # check-tutorial-shell — the bed that keeps the DOCUMENTED example honest.
 # box/tutorial-shell is the box quoted end to end in opencharly.ai's quickstart and
 # concepts pages. Because the site excerpts it rather than paraphrasing it, this bed
