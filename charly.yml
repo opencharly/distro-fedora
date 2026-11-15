@@ -756,8 +756,11 @@ check-whisper-auth:
                      -F file=@"${HOME}/whisper-asr/fixtures/jfk.flac" \
                      http://127.0.0.1:9000/v1/audio/transcriptions
 
-# check-whisper-openwebui-pod — the PAIR. The openwebui image is the SUBJECT (root); the
-# whisper image is a sibling MEMBER, i.e. an instrument. Members are never evaluated
-# themselves: the subject's check lives under the member and drives THROUGH it — it signs
-# into the Open Web UI subject over the shared charly net and uploads the fixture, so the
-# assertion fails unless the entrypoint's STT projection actually happened.
+# NOTE — there is deliberately NO joint `check-whisper-*-pod` bed here.
+# A bed that drives the Open WebUI container through the whisper container cannot currently be
+# expressed: a sibling member gets its own network (container DNS does not resolve across the two,
+# and ${HOST:<bed>:<port>} is host loopback, unreachable from inside a container), and nesting the
+# two makes the `command:` verb panic in the check-env path. All three shapes are measured and filed
+# as opencharly/charly#1153. The integration is instead carried by the beds above (the engine's own
+# behaviour, keyless and keyed), the consumer candy's committed projection stubs, and a live
+# two-deployment run where container-name DNS does work.
