@@ -84,7 +84,7 @@ check-openwebui-pod:
             # serves — not what the pixi lock installs. When the pin advances, this line
             # advances with it in the same change, which is exactly the coupling that was
             # missing while the pin sat three releases behind.
-            - check: the running service serves the open-webui version this box pins (0.12.3), read from its own /api/config
+            - check: the running service serves the open-webui version this box pins (0.13.3), read from its own /api/config
               id: openwebui-served-version
               context:
                 - runtime
@@ -95,7 +95,7 @@ check-openwebui-pod:
                 http: http://127.0.0.1:${HOST_PORT:8080}/api/config
                 status: 200
                 body:
-                  - contains: '"version":"0.12.3"'
+                  - contains: '"version":"0.13.3"'
 # check-tutorial-shell — the bed that keeps the DOCUMENTED example honest.
 # box/tutorial-shell is the box quoted end to end in opencharly.ai's quickstart and
 # concepts pages. Because the site excerpts it rather than paraphrasing it, this bed
@@ -698,3 +698,66 @@ discover:
       recursive: true
     - path: candy
       recursive: true
+
+# check-whisper-pod — the KEYLESS posture of the served ASR engine. Sole proof of the
+# whisper image: builds it from the released candy tag, deploys it as a disposable pod,
+# and runs the candy's own baked checks (health, OpenAI-shaped model list, a real
+# transcription of the committed fixture, and the 400 arm for a model it does not serve).
+# It carries no plan of its own on purpose: every live claim here is the composed candy's
+# check, so a bed plan could only duplicate it (R2).
+check-whisper-pod:
+    pod:
+        image: whisper
+        disposable: true
+        lifecycle: dev
+        description: >-
+                Sole proof of the whisper image — the OpenAI-compatible ASR engine on the Fedora base. Builds the image from `layer-whisper:v2026.318.2328`, deploys it as a disposable pod, and runs the candy's baked checks — the service answers /health, it advertises an OpenAI-shaped model list, it transcribes the committed fixture, and a model it does not serve is refused with a 400 naming both. The keyed posture is proven separately by check-whisper-auth, because a baked check cannot assert 401 on a keyless deployment.
+
+# check-whisper-auth — the KEYED posture. A baked candy check cannot assert 401 (the default
+# deployment is keyless, where 401 would be wrong), so the keyed arm needs a deployment that
+# configures a key. This bed asserts BOTH directions, which is what proves the forwarding
+# branch is not dead code.
+check-whisper-auth:
+    pod:
+        image: whisper
+        disposable: true
+        lifecycle: dev
+        description: >-
+                Sole proof of the whisper image's KEYED auth posture — a disposable pod deployed with WHISPER_API_KEY set. Asserts both directions — an unauthenticated transcription request is refused with 401, and the same request carrying the correct bearer is served the fixture's transcript. Without this bed the 401 branch has no check that fails when it is removed.
+        env:
+            WHISPER_API_KEY: check-bed-probe-key
+        plan:
+            - check: a keyed deployment refuses an unauthenticated request
+              id: auth-refuses-anonymous
+              context:
+                - runtime
+              timeout: 300s
+              eventually: 5m
+              retry_interval: 5s
+              exit_status: 0
+              stdout:
+                - contains: "401"
+              command: |
+                curl -s -o /dev/null -w '%{http_code}' \
+                     -F file=@"${HOME}/whisper-asr/fixtures/jfk.flac" \
+                     http://127.0.0.1:9000/v1/audio/transcriptions
+            - check: a keyed deployment serves the request that carries the correct bearer
+              id: auth-accepts-bearer
+              context:
+                - runtime
+              timeout: 300s
+              eventually: 5m
+              retry_interval: 5s
+              exit_status: 0
+              stdout:
+                - contains: "fellow Americans"
+              command: |
+                curl -sf -H "Authorization: Bearer check-bed-probe-key" \
+                     -F file=@"${HOME}/whisper-asr/fixtures/jfk.flac" \
+                     http://127.0.0.1:9000/v1/audio/transcriptions
+
+# check-whisper-openwebui-pod — the PAIR. The openwebui image is the SUBJECT (root); the
+# whisper image is a sibling MEMBER, i.e. an instrument. Members are never evaluated
+# themselves: the subject's check lives under the member and drives THROUGH it — it signs
+# into the Open Web UI subject over the shared charly net and uploads the fixture, so the
+# assertion fails unless the entrypoint's STT projection actually happened.
