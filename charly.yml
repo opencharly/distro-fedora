@@ -810,32 +810,8 @@ check-fedora-rpmfusion-pod:
             Builds the minimal fedora-rpmfusion image, deploys it, and runs the inherited
             candy checks — both release packages in the rpm database, their .repo files on
             disk under /etc/yum.repos.d/, and the two RPM Fusion signing keys imported and
-            queryable via rpm -q gpg-pubkey — plus a composition-level assertion that the
-            repo definitions actually landed in THIS image rather than being silently
-            skipped by a distro-cascade miss.
-        plan:
-            - check: both RPM Fusion repo definitions landed in this image, so the candy applied its release packages rather than silently no-opping
-              id: fedora-rpmfusion-repo-files
-              context:
-                - runtime
-              exit_status: 0
-              stdout:
-                - contains: RPMFUSION-REPOS-OK
-              command: |
-                set -eu
-                for f in /etc/yum.repos.d/rpmfusion-free.repo /etc/yum.repos.d/rpmfusion-nonfree.repo; do
-                  if [ ! -f "$f" ]; then echo "MISSING $f"; exit 1; fi
-                done
-                echo "RPMFUSION-REPOS-OK"
-            - check: both RPM Fusion signing keys are imported into the rpm database of this image, proving the release packages were signature-verified rather than trusted blind
-              id: fedora-rpmfusion-keys
-              context:
-                - runtime
-              exit_status: 0
-              stdout:
-                - contains: RPMFUSION-KEYS-OK
-              command: |
-                set -eu
-                n=$(rpm -q gpg-pubkey | grep -c gpg-pubkey || true)
-                if [ "$n" -lt 2 ]; then echo "ONLY $n gpg-pubkey entries"; exit 1; fi
-                echo "RPMFUSION-KEYS-OK"
+            queryable via rpm -q gpg-pubkey.
+            THE BED ASSERTS NOTHING OF ITS OWN: those claims are the candy's, and repeating
+            them here would be a second implementation of the same assertion (R2). What this
+            bed adds is the thing only a deployment can add — that the composed image builds,
+            starts and runs those checks on a live pod rather than only in a build stage.
