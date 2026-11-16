@@ -809,8 +809,10 @@ check-fedora-rpmfusion-pod:
             so this candy cannot move to the CachyOS base the way the coder candies did.
             Builds the minimal fedora-rpmfusion image, deploys it, and runs the inherited
             candy checks — both release packages in the rpm database, their .repo files on
-            disk under /etc/yum.repos.d/, and the two RPM Fusion signing keys imported and
-            queryable via rpm -q gpg-pubkey.
+            disk under /etc/yum.repos.d/, the free repo's section header, and the FREE RPM Fusion
+            signing key imported and queryable via rpm -q gpg-pubkey - ONE key check, not two:
+            measured from this bed's own run, whose six rpmfusion checks name
+            `RPM Fusion free signing key` and no nonfree equivalent.
             THE BED ASSERTS NOTHING OF ITS OWN: those claims are the candy's, and repeating
             them here would be a second implementation of the same assertion (R2). What this
             bed adds is the thing only a deployment can add — that the composed image builds,
