@@ -1,8 +1,7 @@
 #  opencharly/distro-fedora — the Fedora image-family, a git submodule mounted at
 #  box/fedora. SELF-CONTAINED: it OWNS the full Fedora base stack locally
 #  (fedora → fedora-nonfree → fedora-builder), the Fedora GPU base family
-#  (nvidia / python-ml), the consumer showcase images (fedora-coder /
-#  charly-fedora / fedora-test), the sway-browser-vnc desktop, and every
+#  (nvidia / python-ml), the consumer showcase images (charly-fedora), the sway-browser-vnc desktop, and every
 #  Fedora-rooted app/fixture box — all discovered under box/.
 #
 #  This repo VENDORS NO CANDIES: every candy is an
@@ -15,10 +14,10 @@
 #  is NO namespace import (`import: []`) — nothing here depends on the main repo
 #  except the @github candy refs.
 #
-#  Directly buildable: `charly box build fedora-coder` (the build verb defaults to
+#  Directly buildable: `charly box build charly-fedora` (the build verb defaults to
 #  this charly.yml). From the parent repo: `charly -C box/fedora box build
-#  fedora-coder`, or anywhere: `charly --repo opencharly/distro-fedora box build
-#  fedora-coder`.
+#  charly-fedora`, or anywhere: `charly --repo opencharly/distro-fedora box build
+#  charly-fedora`.
 # Canonical repo identity — lets the import-namespace loader recognize this repo
 # when main imports it under the `fedora` namespace to build the relocated boxes.
 # The dependency is one-directional: main imports fedora; fedora imports nothing

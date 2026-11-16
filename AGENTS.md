@@ -2,14 +2,13 @@
 
 This submodule is **self-contained**: it OWNS the full Fedora base/builder stack
 locally (`fedora` → `fedora-nonfree` → `fedora-builder`), the Fedora **GPU base
-family** (`nvidia` / `python-ml`), the consumer showcase images (`fedora-coder` /
-`charly-fedora` / `fedora-test`), the `sway-browser-vnc` desktop, and the
+family** (`nvidia` / `python-ml`), the consumer showcase image (`charly-fedora`), the `sway-browser-vnc` desktop, and the
 relocated Fedora-rooted app/fixture boxes (jupyter, jupyter-ml, comfyui, ollama,
 unsloth-studio, immich, immich-ml, openwebui, hermes, web, check-pod, redis,
 tier1/tier23, …) — all discovered under `box/`. It vendors **no shared candy
 layers**: every candy is an `@github.com/opencharly/<layer-*|pod-*|plugin-*>[:subdir]:<tag>`
 ref from its standalone candy repo, and ONE local candy is discovered via the
-`discover:` block — the `candy/fedora-skills` skill carrier that owns this repo's ten
+`discover:` block — the `candy/fedora-skills` skill carrier that owns this repo's eight
 `skill:` entities (their bodies live at THIS REPO'S ROOT, `.agents/skills/<name>/SKILL.md`).
 A second local candy, `candy/charly-marketplace`, used to hold a list of closure refs the
 images resolved bare names against; it was deleted because it drifted and could name a tag
@@ -33,8 +32,7 @@ so the addresses carry no path — do not add one here.
 - `/charly-distros:fedora` — the Fedora 43 base image; root of the RPM hierarchy.
 - `/charly-distros:fedora-builder`, `/charly-distros:fedora-nonfree`,
   `/charly-distros:rpmfusion` — builder + nonfree repos.
-- `/charly-distros:charly-fedora`, `/charly-distros:fedora-test` — the showcase images.
-- `/charly-coder:fedora-coder` — the dev image.
+- `/charly-distros:charly-fedora` — the showcase image.
 - `/charly-distros:nvidia`, `/charly-distros:cuda` — the Fedora GPU base (`nvidia`
   box) + CUDA toolkit; `python-ml` builds on it.
 - `/charly-jupyter:jupyter-ml-notebook` — the CUDA ML JupyterLab box with the
