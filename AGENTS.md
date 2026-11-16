@@ -3,8 +3,8 @@
 This submodule is **self-contained**: it OWNS the full Fedora base/builder stack
 locally (`fedora` → `fedora-nonfree` → `fedora-builder`), the Fedora **GPU base
 family** (`nvidia` / `python-ml`), the consumer showcase image (`charly-fedora`), the `sway-browser-vnc` desktop, and the
-relocated Fedora-rooted app/fixture boxes (jupyter, jupyter-ml, comfyui, ollama,
-unsloth-studio, immich, immich-ml, openwebui, hermes, web, check-pod, redis,
+relocated Fedora-rooted app/fixture boxes (jupyter, jupyter-ml-notebook, comfyui,
+unsloth-studio, immich, immich-ml, openwebui-qdrant, hermes, web, check-pod, redis,
 tier1/tier23, …) — all discovered under `box/`. It vendors **no shared candy
 layers**: every candy is an `@github.com/opencharly/<layer-*|pod-*|plugin-*>[:subdir]:<tag>`
 ref from its standalone candy repo, and ONE local candy is discovered via the
