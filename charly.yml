@@ -886,3 +886,56 @@ check-nvidia-pod:
               package:
                 package: cccl-devel
                 installed: true
+
+# =============================================================================
+# check-fedora-rpmfusion-pod — the ONE non-CachyOS workload this cutover keeps,
+# and the gate that keeps `layer-rpmfusion` proven (opencharly/opencharly#1068).
+#
+# RPM Fusion is a Fedora repository driven by dnf/rpmkeys/rpm -E %fedora; it has no
+# Arch/CachyOS analogue, so unlike the six coder candies it CANNOT be compensated on
+# the CachyOS base. Retiring every Fedora workload while leaving no candy unproven is
+# jointly unsatisfiable for it — so one minimal Fedora gate remains, composing one
+# candy, and nothing else on Fedora.
+# =============================================================================
+check-fedora-rpmfusion-pod:
+    pod:
+        image: fedora-rpmfusion
+        disposable: true
+        lifecycle: dev
+        description: >-
+            Sole remaining Fedora workload and the only live proof of layer-rpmfusion
+            after the non-CachyOS retirement (opencharly/opencharly#1068). RPM Fusion is a
+            Fedora repository driven by dnf/rpmkeys/rpm -E %fedora with no Arch analogue,
+            so this candy cannot move to the CachyOS base the way the coder candies did.
+            Builds the minimal fedora-rpmfusion image, deploys it, and runs the inherited
+            candy checks — both release packages in the rpm database, their .repo files on
+            disk under /etc/yum.repos.d/, and the two RPM Fusion signing keys imported and
+            queryable via rpm -q gpg-pubkey — plus a composition-level assertion that the
+            repo definitions actually landed in THIS image rather than being silently
+            skipped by a distro-cascade miss.
+        plan:
+            - check: both RPM Fusion repo definitions landed in this image, so the candy applied its release packages rather than silently no-opping
+              id: fedora-rpmfusion-repo-files
+              context:
+                - runtime
+              exit_status: 0
+              stdout:
+                - contains: RPMFUSION-REPOS-OK
+              command: |
+                set -eu
+                for f in /etc/yum.repos.d/rpmfusion-free.repo /etc/yum.repos.d/rpmfusion-nonfree.repo; do
+                  if [ ! -f "$f" ]; then echo "MISSING $f"; exit 1; fi
+                done
+                echo "RPMFUSION-REPOS-OK"
+            - check: both RPM Fusion signing keys are imported into the rpm database of this image, proving the release packages were signature-verified rather than trusted blind
+              id: fedora-rpmfusion-keys
+              context:
+                - runtime
+              exit_status: 0
+              stdout:
+                - contains: RPMFUSION-KEYS-OK
+              command: |
+                set -eu
+                n=$(rpm -q gpg-pubkey | grep -c gpg-pubkey || true)
+                if [ "$n" -lt 2 ]; then echo "ONLY $n gpg-pubkey entries"; exit 1; fi
+                echo "RPMFUSION-KEYS-OK"
