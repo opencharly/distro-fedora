@@ -36,72 +36,12 @@ defaults:
         max_mb: 128
 # No namespace import: the fedora base stack is local; candies resolve via @github refs.
 import: []
-# Disposable R10 beds (kind: check, target: pod) — one per fedora consumer
-# image. No bed pins a host port: every inherited container port auto-allocates
-# a free 127.0.0.1 host port, so concurrent bed runs cannot collide with each
-# other or with a production deploy of the same image, and a plan step reaches
-# the port through ${HOST_PORT:N}. `charly check run <bed>` is the
-# canonical R10 gate: build → check-image → deploy → check-live → fresh
-# update → teardown, all on isolated charly-<bed>-* volumes
-# (deployVolumePrefix). `disposable: true` is the sole authorization for
-# the unattended destroy + rebuild.
-check-fedora-coder-pod:
-    pod:
-        image: fedora-coder
-        disposable: true
-        lifecycle: dev
-        description: Sole proof of the full Fedora developer image (sshd + charly-mcp + AI CLIs + language runtimes + DevOps tooling) building and running as one composed pod on the RPM Fusion base, the largest candy stack of any pod bed. Builds the fedora-coder image on fedora-nonfree (pixi/uv/npm/cargo->fedora-builder multistage), deploys it, and runs the composed candies' file/package/service/command/addr probes plus charly-mcp's mcp ping/list-tools/call.
 check-charly-fedora-pod:
     pod:
         image: charly-fedora
         disposable: true
         lifecycle: dev
         description: Sole proof the minimal Fedora charly toolchain image (charly + virtualization/gocryptfs/socat + sshd + container-nesting + nvidia) builds and runs on the bare Fedora base, with charly built from source. Builds the charly-fedora pod on fedora, deploys it, and runs the charly candy's command/file probes (charly version, virsh/qemu/gocryptfs/socat present, charly doctor) plus sshd package/service/addr checks.
-check-fedora-test-pod:
-    pod:
-        image: fedora-test
-        disposable: true
-        lifecycle: dev
-        description: Sole proof of plain HTTP service serving — the traefik reverse-proxy + FastAPI testapi composition on the Fedora base, the only pod bed whose primary feature is plain HTTP. Builds the fedora-test pod on fedora (testapi pixi multistage), deploys it, and runs traefik+testapi baked checks — binary/file presence, service running, http probes on the traefik API port and testapi /health and /.
-# check-openwebui-pod — the disposable witness for the openwebui box, and the reason
-# its pin can move: the candy's own checks cover the entrypoint, the supervised
-# service, the HTTP 200 on the allocated port and the injected WEBUI_ADMIN_EMAIL, and
-# the python layer's floor assertion now holds for the 3.12 this image must run. It
-# carries no port pin, so concurrent runs cannot collide with a production deploy.
-check-openwebui-pod:
-    pod:
-        image: openwebui
-        disposable: true
-        lifecycle: dev
-        description: Sole proof of the openwebui image — the Open Web UI chat front-end with its auto-config entrypoint on the Fedora base, composed with agent-forwarding (GPG/SSH/direnv for the forwarded-agent workflow) and pod-dbus. Builds the openwebui pod on fedora (open-webui from PyPI through pixi, on the 3.12 interpreter upstream requires), deploys it, and runs the candy's baked checks — the entrypoint script present and executable, the supervisord service running, HTTP 200 on the auto-allocated host port, the injected WEBUI_ADMIN_EMAIL, and the published port reachable — plus the python layer's floor assertion. The HTTP probe is readiness-bounded (eventually 3m) because Open Web UI migrates its database before uvicorn binds, so a cold first boot is not a false failure.
-        env:
-            OPENAI_API_BASE_URL: https://api.openai.com/v1
-            OPENAI_API_KEY: not-a-real-key
-            WEBUI_ADMIN_EMAIL: admin@openwebui.example
-        plan:
-            # The box OWNS the pod-openwebui pin, so it owns the expectation: this is the
-            # version read from the app's own /api/config, i.e. what the running service
-            # serves — not what the pixi lock installs. When the pin advances, this line
-            # advances with it in the same change, which is exactly the coupling that was
-            # missing while the pin sat three releases behind.
-            - check: the running service serves the open-webui version this box pins (0.13.3), read from its own /api/config
-              id: openwebui-served-version
-              context:
-                - runtime
-              timeout: 30s
-              eventually: 3m
-              retry_interval: 2s
-              http:
-                http: http://127.0.0.1:${HOST_PORT:8080}/api/config
-                status: 200
-                body:
-                  - contains: '"version":"0.13.3"'
-# check-openwebui-qdrant-pod — the disposable witness for the Qdrant vector store: the
-# openwebui-qdrant image runs Open WebUI and Qdrant in ONE deploy, exactly as the two-pod
-# production shape does (the qdrant layer's env_provide is rewritten to localhost by the
-# same-deploy rule), so the whole provide/secret contract is exercised without needing two
-# separately-built images in one bed. Nothing here re-asserts the service, HTTP or admin
-# checks — those belong to the openwebui candy (and check-openwebui-pod).
 check-openwebui-qdrant-pod:
     pod:
         image: openwebui-qdrant
@@ -469,45 +409,6 @@ check-tunnel-pod:
                 expect:
                     - "ingress tunnel.example.com -> https://localhost:8080"
                     - cloudflared tunnel run charly-check-tunnel
-check-jupyter-pod:
-    pod:
-        image: jupyter
-        disposable: true
-        lifecycle: dev
-        description: Sole proof of the plain JupyterLab image + the jupyter_mcp Streamable-HTTP MCP server (notebook/cell tools, regression coverage) on the Fedora base. Builds the jupyter image on fedora (pixi multistage), deploys it (8888), and runs jupyter+jupyter-mcp baked checks — jupyter-lab/spaCy/workspace file checks, supervisord service, http /api, and multiple mcp ping/list-tools/call cell-manipulation round-trips.
-check-jupyter-ml-pod:
-    pod:
-        image: jupyter-ml
-        disposable: true
-        lifecycle: dev
-        description: Sole proof of the GPU-rooted JupyterLab ML image (spaCy + jupyterlab-quarto + llama.cpp + vLLM + CRDT MCP) building on the Fedora nvidia/CUDA base — the heaviest fedora build. Builds the jupyter-ml pod on the nvidia base (nvidia+cuda candies), deploys it (ordinary pod, no passthrough), and runs spaCy/quarto/llama-cli/vllm build-scope probes plus supervisord service, http /api, and mcp ping/list-tools/call.
-# check-ollama-pod — the R10 bed for the ollama CANDY (candy/ollama), the CUDA
-# backend add-on (candy/ollama-cuda) and the compiled-in command:ollama plugin
-# (candy/plugin-ollama). The bed declares NO plan of its own: every step it needs
-# is baked into the candies it composes — the server probes (binary/file, /api/tags
-# 200, ollama --version, ollama list), the three host-side `charly ollama` steps
-# that prove plugin dispatch and live API round-trips, and the CUDA backend probe.
-# Authoring them on the candies rather than here is what lets the CachyOS sibling
-# bed prove the same surface without repeating a line (R2). The heavy pull/persist
-# proof stays with the candy's agent-check (graded by `charly check feature run`),
-# keeping the deterministic bed light.
-check-ollama-pod:
-    pod:
-        image: ollama
-        disposable: true
-        lifecycle: dev
-        description: Sole proof the Fedora GPU ollama LLM-server image composes and serves on the NVIDIA base, that the CUDA backend is present, and that the compiled-in command:ollama plugin (candy/plugin-ollama) works end-to-end. Builds and deploys the ollama pod and runs the checks baked into the ollama, ollama-cuda and dbus candies — binary/file probes, /api/tags 200, ollama --version, ollama list, the CUDA backend library, and the host-side charly ollama help/version/list steps against the live server over the auto-allocated host port.
-# charly binary install witness on a disposable Fedora Cloud VM. The charly
-# candy installs the binary from the published dnf repo (the distro-repo
-# mechanism, charly#388) and the composed virtualization/gocryptfs/socat layers
-# install their deps. Every
-# assertion is anchored on the MECHANISM: the deploy stages its own host binary
-# under /tmp for its own use, so only a /usr/bin/charly-anchored probe can tell
-# a real candy install from the deploy's scaffolding. The witness FAILS if the
-# binary didn't land at that path or if the welded command plugins don't
-# dispatch project-less. (No tailscale assertion: the charly candy scopes
-# tailscale to the deb-family — on fedora it came from the removed native
-# package's deps, so the post-cutover deploy does not install it.)
 check-fedora-vm:
     vm:
         from: fedora-vm

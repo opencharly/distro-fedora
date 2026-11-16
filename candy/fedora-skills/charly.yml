@@ -71,14 +71,6 @@ fedora-builder-skill:
         triggers:
             - "Fedora images / `fedora*` / `box/fedora` submodule (incl. the GPU base `nvidia` / `python-ml` + `sway-browser-vnc`)"
 
-fedora-coder-skill:
-    skill:
-        name: fedora-coder
-        family: coder
-        owner: fedora-skills
-        triggers:
-            - "Fedora images / `fedora*` / `box/fedora` submodule (incl. the GPU base `nvidia` / `python-ml` + `sway-browser-vnc`)"
-
 fedora-nonfree-skill:
     skill:
         name: fedora-nonfree
@@ -90,14 +82,6 @@ fedora-nonfree-skill:
 fedora-skill:
     skill:
         name: fedora
-        family: distros
-        owner: fedora-skills
-        triggers:
-            - "Fedora images / `fedora*` / `box/fedora` submodule (incl. the GPU base `nvidia` / `python-ml` + `sway-browser-vnc`)"
-
-fedora-test-skill:
-    skill:
-        name: fedora-test
         family: distros
         owner: fedora-skills
         triggers:
