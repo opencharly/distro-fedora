@@ -12,9 +12,9 @@ This submodule is **self-contained** — it owns its entire Fedora stack locally
 |---|---|
 | Base / builder boxes | `fedora`, `fedora-nonfree`, `fedora-builder` |
 | GPU base boxes | `nvidia`, `python-ml` |
-| Showcase / dev images | `fedora-coder` (kitchen-sink dev image), `charly-fedora` (minimal charly toolchain), `fedora-test` (traefik/testapi integration fixture) |
+| Showcase image | `charly-fedora` (minimal charly toolchain) |
 | Desktop | `sway-browser-vnc` (minimal Sway + wayvnc + Chrome) |
-| Relocated app / fixture boxes | `jupyter`, `jupyter-ml`, `comfyui`, `ollama`, `unsloth-studio`, `immich`, `immich-ml`, `openwebui`, `hermes`, `web`, `check-pod`, `redis`, `tier1`, `tier23`, … (many Fedora-rooted boxes, all discovered under `box/`) |
+| Relocated app / fixture boxes | `jupyter`, `jupyter-ml-notebook`, `comfyui`, `unsloth-studio`, `immich`, `immich-ml`, `openwebui-qdrant`, `hermes`, `web`, `check-pod`, `redis`, `tier1`, `tier23`, … (many Fedora-rooted boxes, all discovered under `box/`) |
 
 Every box's base is a bare **local** name (`base: fedora` / `fedora-nonfree` /
 `nvidia`); the distro/builder/init build vocabulary is embedded in the `charly`
@@ -52,19 +52,19 @@ base stack and every Fedora-rooted box, so the dependency is **one-directional**
 - **fedora → main**: only the `@github` candy refs into the shared candy library.
 
 This repo imports nothing back. The image DAG stays acyclic
-(`fedora-coder → fedora-nonfree → fedora → quay.io/fedora/fedora:43`).
+(`charly-fedora → fedora → quay.io/fedora/fedora:43`).
 
 ## Build
 
 ```bash
 # Inside the submodule (the build verb defaults to charly.yml):
-charly box build fedora-coder
+charly box build charly-fedora
 
 # From the parent opencharly repo:
-charly -C box/fedora box build fedora-coder
+charly -C box/fedora box build charly-fedora
 
 # Standalone, against the published repo:
-charly --repo opencharly/distro-fedora box build fedora-coder
+charly --repo opencharly/distro-fedora box build charly-fedora
 ```
 
 The first build resolves the upstream github references into

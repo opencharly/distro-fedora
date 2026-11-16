@@ -2,7 +2,7 @@ fedora-nonfree:
     candy:
         base: fedora
         # Explicit builder map: fedora-nonfree is a base consumers compile on
-        # (e.g. fedora-coder), and builder maps do NOT propagate transitively
+        # (e.g. immich), and builder maps do NOT propagate transitively
         # through the base chain — nor across an import-namespace boundary. In
         # the main repo this is redundant with defaults.builder, but a submodule
         # importing this as fedora-nonfree declares no defaults.builder, so
