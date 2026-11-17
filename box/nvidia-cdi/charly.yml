@@ -1,4 +1,4 @@
-nvidia:
+nvidia-cdi:
     candy:
         # GPU base: Fedora + RPM Fusion (fedora-nonfree) + the GPU runtime
         # (nvidia layer: driver libs + nvidia-container-toolkit/CDI) + the CUDA
@@ -9,10 +9,15 @@ nvidia:
             - linux/amd64
         candy:
             - '@github.com/opencharly/layer-agent-forwarding:v2026.274.0608'
-            # v2026.314.0705's cuda layer requires layer-nvidia at 7766a9d0, so the base's own
+            # The cuda layer requires a matching layer-nvidia, so the base's own
             # nvidia pin moves with it — two differing pins in one scope is a load error.
-            - '@github.com/opencharly/layer-nvidia:7766a9d06ec5fe8c276c091a68fb72cea12688e3'
+            - '@github.com/opencharly/layer-nvidia:v2026.320.1938'
+            # The CDI CONTRACT (opencharly/layer-cdi): build-time assertions that no driver
+            # user-space or nvidia* binary is baked, and a runtime probe that the container resolved
+            # the INJECTED host driver at the running kernel module's version. The `-cdi` suffix on
+            # every GPU box name is what makes that expectation visible.
+            - '@github.com/opencharly/layer-cdi:v2026.321.1745'
             # v2026.290.1513 still listed `cuda-cccl-devel`, which no enabled repo provides,
             # so this base's dnf transaction failed and EVERY GPU image was unbuildable (#110).
             # v2026.314.0705 carries the fix (`cccl-devel`, measured against fedora-multimedia).
-            - '@github.com/opencharly/layer-cuda:v2026.314.0705'
+            - '@github.com/opencharly/layer-cuda:v2026.321.1520'

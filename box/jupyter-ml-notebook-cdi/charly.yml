@@ -1,6 +1,6 @@
-jupyter-ml-notebook:
+jupyter-ml-notebook-cdi:
     candy:
-        base: nvidia
+        base: nvidia-cdi
         platform:
             - linux/amd64
         candy:

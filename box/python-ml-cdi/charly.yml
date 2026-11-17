@@ -1,10 +1,10 @@
-python-ml:
+python-ml-cdi:
     candy:
         # GPU-accelerated Python ML environment (PyTorch / transformers / vLLM /
         # llama.cpp) on the local nvidia base (a heavy GPU image). The python-ml
         # layer owns the pixi.toml, so an explicit builder map is required (builder
         # maps do not cross the `charly` namespace boundary).
-        base: nvidia
+        base: nvidia-cdi
         builder:
             pixi: fedora-builder
             npm: fedora-builder

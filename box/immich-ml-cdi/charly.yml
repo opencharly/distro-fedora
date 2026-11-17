@@ -1,4 +1,4 @@
-immich-ml:
+immich-ml-cdi:
     candy:
         base: fedora
         platform:

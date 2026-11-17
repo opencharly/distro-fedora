@@ -755,7 +755,7 @@ check-whisper-auth:
 # that actually broke: the CCCL headers the package provides.
 check-nvidia-pod:
     pod:
-        image: nvidia
+        image: nvidia-cdi
         disposable: true
         lifecycle: dev
         # GPU-CDI pod on the REFCOUNTED axis (never requires_exclusive: the exclusive
