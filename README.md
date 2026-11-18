@@ -14,7 +14,7 @@ This submodule is **self-contained** — it owns its entire Fedora stack locally
 | GPU base boxes | `nvidia`, `python-ml` |
 | Showcase image | `charly-fedora` (minimal charly toolchain) |
 | Desktop | `sway-browser-vnc` (minimal Sway + wayvnc + Chrome) |
-| Relocated app / fixture boxes | `jupyter`, `jupyter-ml-notebook`, `comfyui`, `unsloth-studio`, `immich`, `immich-ml`, `openwebui-qdrant`, `hermes`, `web`, `check-pod`, `redis`, `tier1`, `tier23`, … (many Fedora-rooted boxes, all discovered under `box/`) |
+| Relocated app / fixture boxes | `jupyter`, `jupyter-ml-notebook`, `comfyui`, `unsloth-studio`, `openwebui-qdrant`, `hermes`, `web`, `check-pod`, `redis`, `tier1`, `tier23`, … (many Fedora-rooted boxes, all discovered under `box/`) |
 
 Every box's base is a bare **local** name (`base: fedora` / `fedora-nonfree` /
 `nvidia`); the distro/builder/init build vocabulary is embedded in the `charly`
