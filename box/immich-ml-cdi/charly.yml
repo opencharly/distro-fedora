@@ -6,8 +6,14 @@ immich-ml-cdi:
         candy:
             - '@github.com/opencharly/layer-agent-forwarding:v2026.274.0608'
             - '@github.com/opencharly/layer-nodejs:v2026.272.0322'
-            - '@github.com/opencharly/layer-cuda:v2026.290.1513'
-            - '@github.com/opencharly/layer-python-ml:v2026.290.1914'
+            # The CDI CONTRACT (opencharly/layer-cdi): build-time assertions that no driver
+            # user-space is baked, and a runtime probe that the container resolved the
+            # INJECTED host driver. layer-cdi v2026.323.1259 requires layer-cuda
+            # v2026.323.0252 -- the release that DROPPED `require: layer-nvidia` -- so the
+            # pin pair moves together.
+            - '@github.com/opencharly/layer-cdi:v2026.323.1259'
+            - '@github.com/opencharly/layer-cuda:v2026.323.0252'
+            - '@github.com/opencharly/layer-python-ml:v2026.323.1851'
             - '@github.com/opencharly/layer-supervisord:v2026.271.1817'
             - '@github.com/opencharly/layer-vectorchord:v2026.273.1836'
             - '@github.com/opencharly/pod-redis:v2026.272.0226'
