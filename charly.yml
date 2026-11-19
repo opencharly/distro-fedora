@@ -40,7 +40,7 @@ check-charly-fedora-pod:
         image: charly-fedora
         disposable: true
         lifecycle: dev
-        description: Sole proof the minimal Fedora charly toolchain image (charly + virtualization/gocryptfs/socat + sshd + container-nesting + nvidia-cdi) builds and runs on the bare Fedora base, with charly built from source. Builds the charly-fedora pod on fedora, deploys it, and runs the charly candy's command/file probes (charly version, virsh/qemu/gocryptfs/socat present, charly doctor) plus sshd package/service/addr checks.
+        description: Sole proof the minimal Fedora charly toolchain image (charly + virtualization/gocryptfs/socat + sshd + container-nesting) builds and runs on the bare Fedora base, with charly built from source. The image composes NO driver layer and no `nvidia-cdi` base — it is a POD and receives the driver user-space through the host's CDI injection (opencharly/distro-fedora#128). Builds the charly-fedora pod on fedora, deploys it, and runs the charly candy's command/file probes (charly version, virsh/qemu/gocryptfs/socat present, charly doctor) plus sshd package/service/addr checks.
 check-openwebui-qdrant-pod:
     pod:
         image: openwebui-qdrant
