@@ -16,8 +16,12 @@ nvidia-cdi:
             # host-global and the runtime injects the driver user-space per container through the CDI
             # spec, so a VM guest composes `layer-nvidia` itself (opencharly/vm-nvidia) and this pod
             # base composes none: `nvidia-ctk` is a HOST tool and never executes in this image.
-            - '@github.com/opencharly/layer-cdi:v2026.323.1259'
-            # v2026.323.0252 (layer-cuda#30) is the release that DROPS `require: layer-nvidia`,
-            # and layer-cdi v2026.323.1259 requires exactly it — pin and require move together,
-            # because two differing tags of one candy in one scope is a load error.
-            - '@github.com/opencharly/layer-cuda:v2026.323.0252'
+            - '@github.com/opencharly/layer-cdi:v2026.323.1618'
+            # layer-cdi v2026.323.1618 requires `layer-cuda` v2026.323.1604 — the release whose
+            # strip walks `/usr/lib{,32,64}` for the driver libraries AND for the
+            # `nvidia`/`vdpau`/xorg trees, and whose own residue assertion walks the same three
+            # layouts (opencharly/layer-cuda#28, opencharly/layer-cdi#12). Pin and require move
+            # together, because two differing tags of one candy in one scope is a load error.
+            # This is the Fedora venue, where `/usr/lib64` is a REAL directory rather than the
+            # symlink it is on Arch/CachyOS, so the layout-scoped strip is what the bed here proves.
+            - '@github.com/opencharly/layer-cuda:v2026.323.1604'
