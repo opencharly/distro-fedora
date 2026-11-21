@@ -1,8 +1,0 @@
-whisper:
-    candy:
-        base: fedora
-        # The served ASR engine, pinned to the release that introduced the service.
-        # The candy is the ONLY thing this image exists to run — no dbus, no charly CLI —
-        # so the image is the candy plus the fedora base and nothing else.
-        candy:
-            - '@github.com/opencharly/layer-whisper:v2026.318.2328'
