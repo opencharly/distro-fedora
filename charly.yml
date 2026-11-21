@@ -696,6 +696,15 @@ discover:
     - path: candy
       recursive: true
 
+# check-nvidia-pod — the DISPOSABLE proof of the GPU BASE every GPU image composes.
+#
+# This bed exists because the base had no gate of its own: a stale layer-cuda pin (which
+# named `cuda-cccl-devel`, a package no enabled repo provides) sat green in review and red
+# in reality, and the defect only surfaced when an unrelated feature tried to base on it
+# (#110). The bed's IMAGE-BUILD step is that missing gate — with the old pin the dnf
+# transaction fails there, before any probe runs — and the probes then assert the piece
+# that actually broke: the CCCL headers the package provides.
+
 check-nvidia-pod:
     pod:
         image: nvidia-cdi
