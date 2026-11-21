@@ -704,7 +704,6 @@ discover:
 # (#110). The bed's IMAGE-BUILD step is that missing gate — with the old pin the dnf
 # transaction fails there, before any probe runs — and the probes then assert the piece
 # that actually broke: the CCCL headers the package provides.
-
 check-nvidia-pod:
     pod:
         image: nvidia-cdi
