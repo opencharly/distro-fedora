@@ -11,26 +11,25 @@ This submodule is **self-contained** — it owns its entire Fedora stack locally
 | Kind | Entries |
 |---|---|
 | Base / builder boxes | `fedora`, `fedora-nonfree`, `fedora-builder` |
-| GPU base boxes | `nvidia`, `python-ml` |
 | Showcase image | `charly-fedora` (minimal charly toolchain) |
 | Desktop | `sway-browser-vnc` (minimal Sway + wayvnc + Chrome) |
-| Relocated app / fixture boxes | `jupyter`, `jupyter-ml-notebook`, `comfyui`, `unsloth-studio`, `openwebui-qdrant`, `hermes`, `web`, `check-pod`, `redis`, `tier1`, `tier23`, … (many Fedora-rooted boxes, all discovered under `box/`) |
+| Relocated app / fixture boxes | `jupyter`, `openwebui-qdrant`, `hermes`, `web`, `check-pod`, `redis`, `tier1`, `tier23`, … (many Fedora-rooted boxes, all discovered under `box/`) |
 
-Every box's base is a bare **local** name (`base: fedora` / `fedora-nonfree` /
-`nvidia`); the distro/builder/init build vocabulary is embedded in the `charly`
+Every box's base is a bare **local** name (`base: fedora` / `fedora-nonfree`);
+the distro/builder/init build vocabulary is embedded in the `charly`
 binary.
 
 ## Composition — local bases, candies by reference
 
 This repo owns its bases and build targets locally, but **vendors no shared candy layers**:
 
-- the Fedora base/builder stack (`fedora` → `fedora-nonfree` → `fedora-builder`)
-  and the GPU base (`nvidia` / `python-ml`) are **local boxes** under `box/`,
-  referenced by bare name (`base: fedora`, `base: nvidia`);
+- the Fedora base/builder stack (`fedora` → `fedora-nonfree` → `fedora-builder`) is a
+  set of **local boxes** under `box/`, referenced by bare name (`base: fedora`,
+  `base: fedora-nonfree`);
 - every shared candy is an `@github.com/opencharly/<layer-*|pod-*|plugin-*>[:subdir]:<tag>`
   ref into its standalone candy repo — ONE local candy is discovered via the
   `discover:` block: `candy/fedora-skills` (the skill carrier that owns this repo's
-  ten `skill:` entities, so each skill's prose is readable and reaches
+  seven `skill:` entities, so each skill's prose is readable and reaches
   `ai.opencharly.skill` — opencharly/sdk#434). A local copy of
   opencharly/marketplace's refs list at `candy/charly-marketplace` was deleted: it
   drifted and could name a deleted tag, aborting the corpus generator
