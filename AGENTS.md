@@ -1,11 +1,11 @@
 # box/fedora — AGENTS.md signpost (not the rule-set)
 
 This submodule is **self-contained**: it OWNS the full Fedora base/builder stack
-locally (`fedora` → `fedora-nonfree` → `fedora-builder`), the Fedora **GPU base
-family** (`nvidia` / `python-ml`), the consumer showcase image (`charly-fedora`), the `sway-browser-vnc` desktop, and the
-relocated Fedora-rooted app/fixture boxes (jupyter, jupyter-ml-notebook, comfyui,
-unsloth-studio, openwebui-qdrant, hermes, web, check-pod, redis,
-tier1/tier23, …) — all discovered under `box/`. It vendors **no shared candy
+locally (`fedora` → `fedora-nonfree` → `fedora-builder`), the consumer showcase image
+(`charly-fedora`), the `sway-browser-vnc` desktop, and the relocated Fedora-rooted
+app/fixture boxes (jupyter, openwebui-qdrant, hermes, web, check-pod, redis,
+tier1/tier23, …) — all discovered under `box/`. **No GPU/CDI box lives here**: the GPU
+images are CachyOS-only, composed on `pod-cdi` (opencharly/opencharly#1287). It vendors **no shared candy
 layers**: every candy is an `@github.com/opencharly/<layer-*|pod-*|plugin-*>[:subdir]:<tag>`
 ref from its standalone candy repo, and ONE local candy is discovered via the
 `discover:` block — the `candy/fedora-skills` skill carrier that owns this repo's eight
@@ -33,10 +33,6 @@ so the addresses carry no path — do not add one here.
 - `/charly-distros:fedora-builder`, `/charly-distros:fedora-nonfree`,
   `/charly-distros:rpmfusion` — builder + nonfree repos.
 - `/charly-distros:charly-fedora` — the showcase image.
-- `/charly-distros:nvidia`, `/charly-distros:cuda` — the Fedora GPU base (`nvidia`
-  box) + CUDA toolkit; `python-ml` builds on it.
-- `/charly-jupyter:jupyter-ml-notebook` — the CUDA ML JupyterLab box with the
-  fine-tuning / Ollama / LLM-course notebooks.
 - `/charly-selkies:sway-browser-vnc` — the minimal Sway + wayvnc + Chrome desktop.
 - `/charly-distros:tutorial-shell`, `/charly-distros:valkey-test` — the teaching
   shell quoted end to end by opencharly.ai, and the Valkey test box.

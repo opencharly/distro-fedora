@@ -2,9 +2,9 @@
 name: fedora-nonfree
 description: |-
   Fedora with RPM Fusion non-free repositories enabled. Base for boxes
-  needing codec or proprietary package support — the GPU base box `nvidia-cdi`,
-  and the `fedora-rpmfusion` / `fedora-builder` images. (The GPU base's SKILL is
-  `/charly-distros:nvidia`; `nvidia-cdi` is the BOX that skill documents.)
+  needing codec or proprietary package support — the `fedora-rpmfusion` /
+  `fedora-builder` images. No GPU base composes it: the GPU images are CachyOS-only
+  (opencharly/opencharly#1287).
   MUST be invoked before building, deploying, configuring, or troubleshooting the fedora-nonfree box.
 ---
 
@@ -48,8 +48,6 @@ charly shell fedora-nonfree
 
 ## Derived Boxes
 
-- `/charly-distros:nvidia` — the GPU base's skill; the box it documents is `box/nvidia-cdi`
-  (non-free for the NVIDIA driver + CUDA stack)
 - `fedora-rpmfusion` — the RPM Fusion free + non-free base the consumer images compile on
 - `/charly-distros:fedora-builder` — the multi-stage builder image
 
