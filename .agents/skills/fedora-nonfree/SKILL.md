@@ -15,9 +15,9 @@ Fedora base with RPM Fusion free and non-free repositories enabled.
 **Owned by the `opencharly/distro-fedora` submodule.** Lives bare-local in the
 **`opencharly/distro-fedora`** submodule (mounted at `box/fedora`), alongside
 `/charly-distros:fedora` + `/charly-distros:fedora-builder`; the submodule is
-SELF-CONTAINED (`import: []`). Its consumers (`/charly-distros:nvidia`, plus the
-local `fedora-rpmfusion` and `fedora-builder` boxes) live in the same submodule and
-base on it as a bare-local `fedora-nonfree`. Its `rpmfusion`
+SELF-CONTAINED (`import: []`). Its consumers (the local `fedora-rpmfusion` and
+`fedora-builder` boxes) live in the same submodule and base on it as a bare-local
+`fedora-nonfree`. Its `rpmfusion`
 candy is pinned as a github ref so the same definition resolves in both main and
 the submodule.
 
