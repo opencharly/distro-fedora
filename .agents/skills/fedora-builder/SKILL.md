@@ -39,10 +39,10 @@ the same definition resolves in both main and the submodule. Build with
 ## Why rpmfusion is first
 
 The build-toolchain candy's `dnf install` references packages that live in RPM Fusion free
-(`libva-devel`, `x264-devel`, `ffmpeg-devel`). These are required to build pixelflux from
-source (its `libva-sys`, `x264-sys`, and `ffmpeg-sys-next` cargo crates link against the
-system libs). Without rpmfusion applied first, those `dnf install` calls would fail.
-See `/charly-selkies:selkies` (Patched pixelflux build pipeline) for the consumer story.
+(`libva-devel`, `x264-devel`, `ffmpeg-devel`). These are required to build the
+Wayland/smithay Rust crates (`libva-sys`, `x264-sys`, `ffmpeg-sys-next`) that link
+against the system libs. Without rpmfusion applied first, those `dnf install` calls
+would fail.
 
 ## Role in Build System
 

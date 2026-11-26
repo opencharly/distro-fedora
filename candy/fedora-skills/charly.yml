@@ -12,7 +12,7 @@
 #  impossible.  This carrier is the package candy the ruling authorises.
 #
 #  THE SHAPE is completed from `opencharly/distro-cachyos`'s own precedent (its
-#  `candy/cachyos-{app,os,selkies}-skills` carriers), which held skill nodes but
+#  `candy/cachyos-{app,os}-skills` carriers), which held skill nodes but
 #  declared no `candy:` node — so `candy: [cachyos-os-skills]` failed with
 #  `candy "…" not found`.  Here the carrier declares a real `candy:` node, and EVERY
 #  image that owns one of these skills composes it, so each skill still rides its
@@ -29,9 +29,9 @@
 fedora-skills:
     candy:
         description: |-
-            The Fedora skill carrier: the package candy that OWNS the seven `fedora*` skill
+            The Fedora skill carrier: the package candy that OWNS the six `fedora*` skill
             entities (`fedora`, `fedora-builder`, `fedora-nonfree`, `charly-fedora`,
-            `sway-browser-vnc`, `tutorial-shell`, `valkey-test`).  It ships no install content — its payload is
+            `tutorial-shell`, `valkey-test`).  It ships no install content — its payload is
             the skill prose under `.agents/skills/`, read at build time by the skill
             collector — and it exists because a skill's `owner:` must name a candy that
             rides an image, not the image itself (opencharly/sdk#434).  Composed by every
@@ -60,7 +60,7 @@ charly-fedora-skill:
         family: distros
         owner: fedora-skills
         triggers:
-            - "Fedora images / `fedora*` / `box/fedora` submodule (the base/builder stack, `charly-fedora`, `sway-browser-vnc`)"
+            - "Fedora images / `fedora*` / `box/fedora` submodule (the base/builder stack, `charly-fedora`)"
 
 fedora-builder-skill:
     skill:
@@ -68,7 +68,7 @@ fedora-builder-skill:
         family: distros
         owner: fedora-skills
         triggers:
-            - "Fedora images / `fedora*` / `box/fedora` submodule (the base/builder stack, `charly-fedora`, `sway-browser-vnc`)"
+            - "Fedora images / `fedora*` / `box/fedora` submodule (the base/builder stack, `charly-fedora`)"
 
 fedora-nonfree-skill:
     skill:
@@ -76,7 +76,7 @@ fedora-nonfree-skill:
         family: distros
         owner: fedora-skills
         triggers:
-            - "Fedora images / `fedora*` / `box/fedora` submodule (the base/builder stack, `charly-fedora`, `sway-browser-vnc`)"
+            - "Fedora images / `fedora*` / `box/fedora` submodule (the base/builder stack, `charly-fedora`)"
 
 fedora-skill:
     skill:
@@ -84,13 +84,8 @@ fedora-skill:
         family: distros
         owner: fedora-skills
         triggers:
-            - "Fedora images / `fedora*` / `box/fedora` submodule (the base/builder stack, `charly-fedora`, `sway-browser-vnc`)"
+            - "Fedora images / `fedora*` / `box/fedora` submodule (the base/builder stack, `charly-fedora`)"
 
-sway-browser-vnc-skill:
-    skill:
-        name: sway-browser-vnc
-        family: selkies
-        owner: fedora-skills
 tutorial-shell-skill:
     skill:
         name: tutorial-shell

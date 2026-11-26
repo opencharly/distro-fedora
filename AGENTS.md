@@ -2,13 +2,13 @@
 
 This submodule is **self-contained**: it OWNS the full Fedora base/builder stack
 locally (`fedora` → `fedora-nonfree` → `fedora-builder`), the consumer showcase image
-(`charly-fedora`), the `sway-browser-vnc` desktop, and the relocated Fedora-rooted
+(`charly-fedora`), and the relocated Fedora-rooted
 app/fixture boxes (jupyter, openwebui-qdrant, hermes, web, check-pod, redis,
 tier1/tier23, …) — all discovered under `box/`. **No GPU/CDI box lives here**: the GPU
 images are CachyOS-only, composed on `pod-cdi` (opencharly/opencharly#1287). It vendors **no shared candy
 layers**: every candy is an `@github.com/opencharly/<layer-*|pod-*|plugin-*>[:subdir]:<tag>`
 ref from its standalone candy repo, and ONE local candy is discovered via the
-`discover:` block — the `candy/fedora-skills` skill carrier that owns this repo's seven
+`discover:` block — the `candy/fedora-skills` skill carrier that owns this repo's six
 `skill:` entities (their bodies live at THIS REPO'S ROOT, `.agents/skills/<name>/SKILL.md`).
 A second local candy, `candy/charly-marketplace`, used to hold a list of closure refs the
 images resolved bare names against; it was deleted because it drifted and could name a tag
@@ -33,7 +33,6 @@ so the addresses carry no path — do not add one here.
 - `/charly-distros:fedora-builder`, `/charly-distros:fedora-nonfree`,
   `/charly-distros:rpmfusion` — builder + nonfree repos.
 - `/charly-distros:charly-fedora` — the showcase image.
-- `/charly-selkies:sway-browser-vnc` — the minimal Sway + wayvnc + Chrome desktop.
 - `/charly-distros:tutorial-shell`, `/charly-distros:valkey-test` — the teaching
   shell quoted end to end by opencharly.ai, and the Valkey test box.
 
