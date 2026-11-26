@@ -39,10 +39,10 @@ the same definition resolves in both main and the submodule. Build with
 ## Why rpmfusion is first
 
 The build-toolchain candy's `dnf install` references packages that live in RPM Fusion free
-(`libva-devel`, `x264-devel`, `ffmpeg-devel`). These are required to build the
-Wayland/smithay Rust crates (`libva-sys`, `x264-sys`, `ffmpeg-sys-next`) that link
-against the system libs. Without rpmfusion applied first, those `dnf install` calls
-would fail.
+(`libva-devel`, `x264-devel`, `ffmpeg-devel`). They are the devel packages a
+Wayland/smithay Rust crate build (`libva-sys`, `x264-sys`, `ffmpeg-sys-next`) links
+against; the build-toolchain offers them so such a build works on this base. Without
+rpmfusion applied first, those `dnf install` calls would fail.
 
 ## Role in Build System
 
