@@ -1,8 +1,8 @@
 #  opencharly/distro-fedora — the Fedora image-family, a git submodule mounted at
 #  box/fedora. SELF-CONTAINED: it OWNS the full Fedora base stack locally
-#  (fedora → fedora-nonfree → fedora-builder), the consumer showcase images
-#  (charly-fedora), the sway-browser-vnc desktop, and every
-#  Fedora-rooted app/fixture box — all discovered under box/.
+#  (fedora → fedora-nonfree → fedora-builder), the consumer showcase image
+#  (charly-fedora), and every Fedora-rooted app/fixture box — all discovered
+#  under box/.
 #  NO GPU/CDI box lives here: the GPU images are CachyOS-only, composed on pod-cdi
 #  (opencharly/opencharly#1287).
 #
@@ -146,44 +146,12 @@ check-tutorial-shell:
         disposable: true
         lifecycle: dev
         description: >-
-            Sole proof of the DOCUMENTED teaching example — the tutorial-shell box that opencharly.ai quotes verbatim in its quickstart and concepts curriculum. Builds the box (supervisord + ripgrep + sshd) on the bare Fedora base, deploys it as a pod, brings it to steady state, and does it again after a fresh rebuild. sshd declares a service:, so charly resolves the init the target needs; the box lists the supervisord candy explicitly so the assembled /etc/supervisord.conf is deterministic, and its own plan asserts sshd became a supervisord program. The acceptance content is the composed candies' own runtime probes — sshd's service and published-port checks and supervisord's control-socket check — each candy contributing its acceptance plan and not merely its binary. The box's image-scope check asserts the wiring itself: [program:sshd] in the assembled supervisord config, a block no composed candy produces on its own. Carries no plan: of its own. A bed earns its own steps only for a claim that needs a LIVE deployment AND that no composed candy already makes — the local example is check-sway-browser-vnc-pod, which adds cdp/wl/record probes against a running desktop. Every live claim here is already covered by the composed candies' runtime probes, so a bed plan could only duplicate them (R2), and the duplicate would pass for the wrong reason: testing the candy rather than this deployment.
-# check-sway-browser-vnc-pod deploys the SHIPPING sway-browser-vnc image
-# (Sway desktop + Chrome + wayvnc) on the Fedora base. The image bakes
-# binaries/services/cdp/vnc/wl/dbus + mcp (chrome-devtools-mcp layer); the
-# check: block adds the remaining deploy-scope probes (operator-side http, cdp
-# list, wl sway-tree, record). Publishes the image's canonical 5900/9222/9224.
-# sway-browser-vnc's canonical home (relocated from the retired
-# opencharly/selkies submodule; its base is fedora).
-check-sway-browser-vnc-pod:
-    pod:
-        image: sway-browser-vnc
-        disposable: true
-        lifecycle: dev
-        description: Sole bed proving the full browser-desktop probe surface — the only deterministic source of cdp + vnc + record + dbus probes together (the richest probe-verb bed) against the Sway+Chrome+wayvnc desktop. Builds the sway-browser-vnc image on fedora, deploys it (5900/9222/9224), and runs sway-desktop-vnc's baked cdp/vnc/wl/dbus probes plus the bed's own cdp list, wl sway-tree, and record start steps.
-        plan:
-            - check: cdp=list
-              cdp: list
-              id: esbv-pod-cdp-list
-              context:
-                - runtime
-            - check: wl=sway-tree
-              wl: sway-tree
-              id: esbv-pod-wl-sway-tree
-              context:
-                - runtime
-            - check: record=start
-              record:
-                method: start
-                record_name: check-term
-                record_mode: terminal
-              id: esbv-pod-record-start
-              context:
-                - runtime
+            Sole proof of the DOCUMENTED teaching example — the tutorial-shell box that opencharly.ai quotes verbatim in its quickstart and concepts curriculum. Builds the box (supervisord + ripgrep + sshd) on the bare Fedora base, deploys it as a pod, brings it to steady state, and does it again after a fresh rebuild. sshd declares a service:, so charly resolves the init the target needs; the box lists the supervisord candy explicitly so the assembled /etc/supervisord.conf is deterministic, and its own plan asserts sshd became a supervisord program. The acceptance content is the composed candies' own runtime probes — sshd's service and published-port checks and supervisord's control-socket check — each candy contributing its acceptance plan and not merely its binary. The box's image-scope check asserts the wiring itself: [program:sshd] in the assembled supervisord config, a block no composed candy produces on its own. Carries no plan: of its own. Every live claim here is already covered by the composed candies' runtime probes, so a bed plan could only duplicate them (R2), and the duplicate would pass for the wrong reason: testing the candy rather than this deployment.
 # Relocated from main (2026-06 box inversion) with their boxes — bare local
 # box refs (check-pod / jupyter now live under box/ in this
 # submodule). Per-box R10 beds; the cross-deployment mechanism beds
-# (check-cross-*) also live here now (below, before vm:) — their web /
-# chrome-headless fixtures and the check-cross-local-driver template are
+# (check-cross-*) also live here now (below, before vm:) — their web
+# fixtures and the check-cross-local-driver template are
 # local to this submodule.
 # check-pod — the BED relocated to opencharly/plugin-pod (its subject is the pod
 # runtime/mechanism that plugin owns); receiving half opencharly/plugin-pod#6,
@@ -473,57 +441,6 @@ check-fedora-vm:
               exit_status: 0
               context:
                 - runtime
-# Cross-deployment probing (pod→pod): a Chrome DRIVER pod (sibling member)
-# CDP-probes a separate web-server SUBJECT pod (sibling member) over the shared
-# `charly` network. Proves venue-from-position + ${HOST:<subject>} end-to-end —
-# the canonical "a different kind of deployment tests another" case. Both members
-# are siblings under a GROUP, brought up by foldMembers' shared deploy+check
-# lifecycle (R2); the driver is an instrument, never check-live'd itself.
-check-cross-pod-cdp:
-    pod:
-        image: web
-        plan:
-            - check: http=http://127.0.0.1:${HOST_PORT:8080}/
-              id: web-fixture-up
-              context:
-                - runtime
-              http:
-                http: http://127.0.0.1:${HOST_PORT:8080}/
-                status: 200
-                body:
-                    - contains: charly-fixture-web-content-marker
-        disposable: true
-        lifecycle: dev
-        description: >-
-            Sole proof of pod->pod cross-deployment CDP probing — a Chrome DRIVER pod (sibling member) CDP-renders a separate web SUBJECT pod (sibling member) over the shared charly net via venue-from-position + ${HOST:check-cross-pod-cdp}. The web SUBJECT pod is the bed root; the chrome DRIVER pod is a sibling member; http-checks the subject marker on the bed root, then cdp open / cdp text steps under the chrome member (venue=chrome) navigate to ${HOST:check-cross-pod-cdp}:8080 and assert the rendered fixture marker.
-    chrome:
-        pod:
-            image: chrome-headless
-            plan:
-                - check: cdp=open
-                  id: cdp-open-web-subject
-                  cdp:
-                    method: open
-                    url: http://${HOST:check-cross-pod-cdp}:8080
-                  eventually: 45s
-                  retry_interval: 3s
-                  context:
-                    - runtime
-                - check: cdp=text
-                  id: cdp-web-fixture-rendered
-                  cdp:
-                    method: text
-                    tab: "1"
-                  # 90s, not 30s: on the concurrent 32-bed roster one wedged CDP call cycle
-                  # measured 37.8s, so a 30s budget could not fit a single complete attempt and
-                  # the retry_interval below bought nothing — the step failed on the clock rather
-                  # than on the page. 90s leaves room for two full slow cycles plus retries.
-                  eventually: 90s
-                  retry_interval: 3s
-                  stdout:
-                    - contains: charly-fixture-web-content-marker
-                  context:
-                    - runtime
 # Cross-deployment probing ACROSS KINDS (local→VM): a LOCAL (host) DRIVER member
 # curls a web-server SUBJECT running in a VM member. The driver reaches the guest's
 # nginx :80 via ${HOST:check-cross-vm-http:80} → resolveCheckEndpoint's VM branch →
