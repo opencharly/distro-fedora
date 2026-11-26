@@ -147,6 +147,39 @@ check-tutorial-shell:
         lifecycle: dev
         description: >-
             Sole proof of the DOCUMENTED teaching example — the tutorial-shell box that opencharly.ai quotes verbatim in its quickstart and concepts curriculum. Builds the box (supervisord + ripgrep + sshd) on the bare Fedora base, deploys it as a pod, brings it to steady state, and does it again after a fresh rebuild. sshd declares a service:, so charly resolves the init the target needs; the box lists the supervisord candy explicitly so the assembled /etc/supervisord.conf is deterministic, and its own plan asserts sshd became a supervisord program. The acceptance content is the composed candies' own runtime probes — sshd's service and published-port checks and supervisord's control-socket check — each candy contributing its acceptance plan and not merely its binary. The box's image-scope check asserts the wiring itself: [program:sshd] in the assembled supervisord config, a block no composed candy produces on its own. Carries no plan: of its own. Every live claim here is already covered by the composed candies' runtime probes, so a bed plan could only duplicate them (R2), and the duplicate would pass for the wrong reason: testing the candy rather than this deployment.
+# Relocated from main (2026-06 box inversion) with their boxes — bare local
+# box refs (check-pod / jupyter now live under box/ in this
+# submodule). Per-box R10 beds; the cross-deployment mechanism beds
+# (check-cross-*) also live here now (below, before vm:) — their web
+# fixtures and the check-cross-local-driver template are
+# local to this submodule.
+# check-pod — the BED relocated to opencharly/plugin-pod (its subject is the pod
+# runtime/mechanism that plugin owns); receiving half opencharly/plugin-pod#6,
+# source-side removal this PR. `box/check-pod/` is KEPT: it is the shared
+# fixture for the four remaining pod-mechanism beds below (check-addcandy-pod /
+# check-stepkind-emit-pod / check-enc-pod / check-tunnel-pod), exactly as
+# `web-vm` was kept for check-cross-vm-http in distro-fedora#54. Deleting the
+# fixture would leave those four beds failing at image-build with
+# `unknown box "check-pod"` (proven: `charly box build check-pod`).
+# add_candy-on-pod overlay-deploy witness. Deploy-KEY (check-addcandy-pod) differs
+# from image-NAME (check-pod) — the precise condition under which the pod overlay
+# (`<deploy-key>-overlay` + the `<deploy-key>:<calver>` alias, carrying the
+# add_candy marker layer) may diverge from what `charly config <deploy-key>`
+# resolves to deploy (it resolves the running image via the deploy's `image:`
+# field — the BASE short-name). The bed RDD-settles whether the overlay (with the
+# add_candy layer) actually deploys: it overlays the @github pod-addcandy-marker
+# layer (a /etc/pod-addcandy-marker file-write AND a copy: of copied.dat to
+# /etc/pod-addcandy-copied, built from the LOCAL superproject tree via the bed
+# runner's auto CHARLY_REPO_OVERRIDE — the :vTAG is ignored), then asserts BOTH
+# markers are present INSIDE the running container. The write: leg proves the
+# overlay deployed (PASS iff the overlay deployed; FAIL iff the base check-pod
+# image deployed instead — the quirk); the copy: leg additionally proves the
+# REMOTE add_candy candy's source tree was STAGED into .build/_candy/<name>.<version>/
+# (a copy: emits `COPY --from=<candy>` against the per-candy `FROM scratch AS
+# <candy>` context stage, whose COPY source is that staged dir) — without the
+# staging the overlay BUILD itself fails at `COPY .build/_candy/…: no such file`,
+# the write:-only marker never referenced the scratch stage so never exercised it.
+# Reuses the already-built check-pod image so the bed stays light.
 check-addcandy-pod:
     pod:
         image: check-pod
