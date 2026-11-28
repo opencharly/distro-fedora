@@ -3,7 +3,7 @@
 This submodule is **self-contained**: it OWNS the full Fedora base/builder stack
 locally (`fedora` → `fedora-nonfree` → `fedora-builder`), the consumer showcase image
 (`charly-fedora`), and the relocated Fedora-rooted
-app/fixture boxes (jupyter, openwebui-qdrant, hermes, web, check-pod, redis,
+app/fixture boxes (openwebui-qdrant, hermes, web, check-pod, redis,
 tier1/tier23, …) — all discovered under `box/`. **No GPU/CDI box lives here**: the GPU
 images are CachyOS-only, composed on `pod-cdi` (opencharly/opencharly#1287). It vendors **no shared candy
 layers**: every candy is an `@github.com/opencharly/<layer-*|pod-*|plugin-*>[:subdir]:<tag>`
