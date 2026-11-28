@@ -148,7 +148,7 @@ check-tutorial-shell:
         description: >-
             Sole proof of the DOCUMENTED teaching example — the tutorial-shell box that opencharly.ai quotes verbatim in its quickstart and concepts curriculum. Builds the box (supervisord + ripgrep + sshd) on the bare Fedora base, deploys it as a pod, brings it to steady state, and does it again after a fresh rebuild. sshd declares a service:, so charly resolves the init the target needs; the box lists the supervisord candy explicitly so the assembled /etc/supervisord.conf is deterministic, and its own plan asserts sshd became a supervisord program. The acceptance content is the composed candies' own runtime probes — sshd's service and published-port checks and supervisord's control-socket check — each candy contributing its acceptance plan and not merely its binary. The box's image-scope check asserts the wiring itself: [program:sshd] in the assembled supervisord config, a block no composed candy produces on its own. Carries no plan: of its own. Every live claim here is already covered by the composed candies' runtime probes, so a bed plan could only duplicate them (R2), and the duplicate would pass for the wrong reason: testing the candy rather than this deployment.
 # Relocated from main (2026-06 box inversion) with their boxes — bare local
-# box refs (check-pod / jupyter now live under box/ in this
+# box refs (check-pod now lives under box/ in this
 # submodule). Per-box R10 beds; the cross-deployment mechanism beds
 # (check-cross-*) also live here now (below, before vm:) — their web
 # fixtures and the check-cross-local-driver template are

@@ -12,7 +12,7 @@ This submodule is **self-contained** — it owns its entire Fedora stack locally
 |---|---|
 | Base / builder boxes | `fedora`, `fedora-nonfree`, `fedora-builder` |
 | Showcase image | `charly-fedora` (minimal charly toolchain) |
-| Relocated app / fixture boxes | `jupyter`, `openwebui-qdrant`, `hermes`, `web`, `check-pod`, `redis`, `tier1`, `tier23`, … (many Fedora-rooted boxes, all discovered under `box/`) |
+| Relocated app / fixture boxes | `openwebui-qdrant`, `hermes`, `web`, `check-pod`, `redis`, `tier1`, `tier23`, … (many Fedora-rooted boxes, all discovered under `box/`) |
 
 Every box's base is a bare **local** name (`base: fedora` / `fedora-nonfree`);
 the distro/builder/init build vocabulary is embedded in the `charly`
